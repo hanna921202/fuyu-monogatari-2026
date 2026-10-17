@@ -106,6 +106,8 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #jukebox button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.35);color:var(--ink);cursor:pointer;font-size:12px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center}
 #jukebox button:hover{border-color:var(--acc);color:var(--acc)}
 #jukebox button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#jukebox button svg{width:13px;height:13px;display:block;fill:currentColor;flex:0 0 auto}
+#jukebox #jb-next svg{width:12px;height:12px;opacity:.88}
 @media(prefers-color-scheme:dark){#jukebox button{background:rgba(20,40,60,.35)}}
 :root[data-theme="dark"] #jukebox button{background:rgba(20,40,60,.35)}
 #drawer{position:fixed;inset:0;z-index:40;pointer-events:none}
@@ -207,6 +209,9 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 #mb span{width:16px}
 #jukebox{top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(8px + 44px);width:min(180px,calc(100vw - 64px));padding:6px 8px;border-radius:12px}
 #jukebox .jb-title{font-size:11px}#jukebox button{width:28px;height:28px;font-size:11px}
+#jukebox button svg{width:12px;height:12px}
+#jukebox #jb-next{border-color:rgba(120,150,180,.28);background:rgba(255,255,255,.22)}
+#jukebox #jb-next svg{width:11px;height:11px;opacity:.9}
 #drawer .pn{width:min(72vw,260px);padding:calc(env(safe-area-inset-top,0px) + 56px) 14px 20px}
 .dl button{font-size:14px;padding:10px 8px;letter-spacing:.08em}
 .dt{font-size:13px;margin-bottom:10px}
@@ -237,7 +242,9 @@ label{font-size:11px;margin-bottom:6px}
   </div>
   <div class="jb-btns">
    <button type="button" id="jb-play" aria-label="播放／暫停" title="播放／暫停">▶</button>
-   <button type="button" id="jb-next" aria-label="下一首" title="下一首">⏭</button>
+   <button type="button" id="jb-next" aria-label="下一首" title="下一首">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.2 5.4c0-.7.8-1.1 1.3-.7l9.2 6.1c.5.3.5 1.1 0 1.4l-9.2 6.1c-.5.4-1.3 0-1.3-.7V5.4zm12.1-.6c-.4 0-.7.3-.7.7v13c0 .4.3.7.7.7h1.2c.4 0 .7-.3.7-.7v-13c0-.4-.3-.7-.7-.7h-1.2z"/></svg>
+   </button>
   </div>
  </div>
 </div>
