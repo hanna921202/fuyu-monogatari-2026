@@ -30,7 +30,8 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .fl .d{font-family:"Cormorant Garamond",serif;font-size:26px;color:var(--acc)}
 .fl .d small,.fl .dw{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yuanti TC",sans-serif;font-size:13px;font-weight:500;letter-spacing:.18em;color:var(--mute);vertical-align:middle;margin-left:4px}
 .fl .r{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:15px}
-.fl .r i{flex:1;border-top:1px dashed var(--mute);position:relative}.fl .r i::after{content:"✈";position:absolute;right:42%;top:-12px;font-style:normal;font-size:14px;color:var(--acc)}
+.fl .r i{flex:1;border-top:1px dashed var(--mute);position:relative;font-style:normal}
+.fl .r i svg{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;fill:var(--acc);opacity:.9;display:block;pointer-events:none}
 .fl small{color:var(--mute)}
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:thin}
 .tab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:8px 14px;cursor:pointer;font:inherit;font-size:13px;text-align:center;line-height:1.35}
@@ -165,7 +166,7 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .fl .d{font-size:17px;line-height:1.2}
 .fl .d small,.fl .dw{font-size:10px;letter-spacing:.1em}
 .fl .r{font-size:12px;gap:6px;margin-top:1px}
-.fl .r i::after{font-size:11px;top:-9px}
+.fl .r i svg{width:13px;height:13px;margin:-6.5px 0 0 -6.5px;opacity:.85}
 .fl .no,.fl .nt{font-size:10px;margin-top:2px}
 .fl .tm{font-size:13px;margin-top:2px}
 .wish .card,.pk .card,#stay .card,#day.card,#cur .card,#acct .card,#ootd .card,#jnl .card{padding:10px 12px;border-radius:10px}
@@ -453,7 +454,7 @@ let FL=cl(FL0),WS=cl(WS0),eF=false,eW=false,dF=null,dW=null;
 const flBox=document.getElementById('flights'),wsBox=document.getElementById('wish');
 const FF=[['date','日期','sm'],['w','星期','sm'],['airline','航空公司',''],['no','航班編號','sm'],['from','出發機場',''],['to','抵達機場',''],['dep','起飛時間','sm'],['arr','抵達時間','sm']];
 function renderFlights(){
- if(!eF){flBox.innerHTML=`<div class="flights">${FL.map(f=>`<div class="card fl"><div class="d">${esc(f.date)}<small class="dw">${esc(toJpW(f.w))}</small></div><div class="r">${esc(f.from)}<i></i>${esc(f.to)}</div>${f.airline||f.no?`<div class="no">${esc(f.airline)} ${esc(f.no)}</div>`:''}${f.dep||f.arr?`<div class="tm">${esc(f.dep||'--:--')} → ${esc(f.arr||'--:--')}</div>`:''}${f.note?`<div class="nt">${esc(f.note)}</div>`:''}</div>`).join('')}</div>${canEdit?'<button class="btn" data-a="edit">✎ 編輯航班</button>':''}`;return}
+ if(!eF){flBox.innerHTML=`<div class="flights">${FL.map(f=>`<div class="card fl"><div class="d">${esc(f.date)}<small class="dw">${esc(toJpW(f.w))}</small></div><div class="r">${esc(f.from)}<i aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10.18 9 5.78 2.23A1 1 0 0 0 4.93 1.76H3.66a1 1 0 0 0-.86 1.5L6.2 9H3.5L2.15 7.35a.5.5 0 0 0-.4-.2H.8a.5.5 0 0 0-.4.8L2.2 11 .4 13.85a.5.5 0 0 0 .4.8h.95a.5.5 0 0 0 .4-.2L3.5 13h2.7l-3.4 5.5a1 1 0 0 0 .86 1.5h1.27a1 1 0 0 0 .85-.47L10.18 13H21a2 2 0 1 0 0-4H10.18z"/></svg></i>${esc(f.to)}</div>${f.airline||f.no?`<div class="no">${esc(f.airline)} ${esc(f.no)}</div>`:''}${f.dep||f.arr?`<div class="tm">${esc(f.dep||'--:--')} → ${esc(f.arr||'--:--')}</div>`:''}${f.note?`<div class="nt">${esc(f.note)}</div>`:''}</div>`).join('')}</div>${canEdit?'<button class="btn" data-a="edit">✎ 編輯航班</button>':''}`;return}
  flBox.innerHTML=`<div class="banner">後台編輯模式 · 航班</div>${dF.map((f,i)=>`<div class="item" data-i="${i}"><div class="row">${FF.map(([k,l,c])=>`<label class="${c}">${l}<input data-f="${k}" value="${esc(f[k])}"></label>`).join('')}</div><label>備註<textarea data-f="note">${esc(f.note)}</textarea></label><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增航班</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="fmsg"></span></div>`}
 const RN={hk:'北海道',tk:'東京'};
 function renderWish(){
