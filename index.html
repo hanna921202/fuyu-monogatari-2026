@@ -688,12 +688,22 @@ function watchLedger(){db.collection('ledger').onSnapshot(sn=>{sn.docs.forEach(d
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','想去清單'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-acct','記帳']];
 const dr=document.getElementById('drawer'),mb=document.getElementById('mb');
 let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">❄ ${t}</button>`).join('')}buildMenu();
-function openSec(id,jump){curSec=id;document.querySelectorAll('.sec').forEach(x=>x.classList.toggle('on',(id==='home'&&!x.classList.contains('noh'))||x.id===id));dr.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('act',b.dataset.s===id));if(jump){try{document.querySelector('main').scrollIntoView()}catch(e){}}}
+function validSec(id){return SECS.some(([s])=>s===id&&(s!=='s-acct'||canEdit))}
+function openSec(id,jump){
+ if(!validSec(id))id='home';
+ curSec=id;
+ document.querySelectorAll('.sec').forEach(x=>x.classList.toggle('on',(id==='home'&&!x.classList.contains('noh'))||x.id===id));
+ dr.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('act',b.dataset.s===id));
+ try{sessionStorage.setItem('fuyu-sec',id)}catch(e){}
+ try{const h=id==='home'?'':('#'+id);if(location.hash!==h)history.replaceState(null,'',h||(location.pathname+location.search))}catch(e){}
+ if(jump){try{document.querySelector('main').scrollIntoView()}catch(e){}}
+}
 function tgl(o){dr.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
 mb.onclick=()=>tgl(!dr.classList.contains('open'));
 dr.addEventListener('click',e=>{const s=e.target.dataset.s;if(s){openSec(s,true);tgl(false)}else if(e.target.classList.contains('ov'))tgl(false)});
 addEventListener('keydown',e=>{if(e.key==='Escape')tgl(false)});
-openSec('home',false);
+addEventListener('hashchange',()=>{const id=(location.hash||'').replace(/^#/,'')||'home';if(validSec(id))openSec(id,false)});
+(()=>{let id=(location.hash||'').replace(/^#/,'');if(!id){try{id=sessionStorage.getItem('fuyu-sec')||''}catch(e){id=''}}openSec(validSec(id)?id:'home',false)})();
 box.addEventListener('change',async e=>{const t=e.target;if(!t.dataset.up||!edit||!t.files[0])return;const i=+t.closest('.item').dataset.i,m=document.getElementById('msg');m.textContent='圖片上傳中…';
  try{const as=await claude.use('assets');if(!as)throw 0;const r=await as.upload(await shrink(t.files[0]));draft.items[i].img=r.id;renderEdit()}catch(err){m.textContent='圖片上傳失敗，請確認有編輯權限'}});
 const lb=document.createElement('div');lb.id='lb';lb.innerHTML='<img alt="">';document.body.appendChild(lb);
