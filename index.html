@@ -239,104 +239,50 @@ label{font-size:11px;margin-bottom:6px}
 <section class="sec noh" id="s-jnl"><h2>旅途手記</h2><div id="jnl"></div></section>
 </main>
 <footer>— 行程持續更新中 —</footer>
-<div id="syncbar"><div class="tx" id="sync">同步中…</div><button class="btn s" type="button" id="syncBtn">啟用雲端儲存</button></div>
-<div id="tokbox"><div class="panel"><h3>啟用雙機雲端同步</h3><p>請建立 Fine-grained token：只選 <b>fuyu-monogatari-2026</b>，Permissions → Contents 必須是 <b>Read and write</b>（不能只選 Read）。iPhone 與 ROG 貼同一個權杖。</p><label>編輯權杖<input id="tokIn" placeholder="貼上權杖…" autocomplete="off" spellcheck="false"></label><div id="tokErr" style="color:#c0504d;font-size:12px;margin:6px 0 0;min-height:1.2em"></div><div class="bar"><button class="btn pri" type="button" id="tokSave">驗證並啟用</button><button class="btn" type="button" id="tokClose">取消</button></div></div></div>
+<div id="syncbar"><div class="tx" id="sync">同步中…</div></div>
 
 <script>
 
 const DBKEY='fuyu-monogatari-v1';
-const GH_OWNER='hanna921202',GH_REPO='fuyu-monogatari-2026',GH_PATH='data/store.json';
-const RAW_URL=`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/${GH_PATH}`;
-const API_URL=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
-/* 共用編輯權杖：網址 ?edit= / #edit= 或本機記住。兩支手機都要啟用同一權杖。 */
-function readEditToken(){
-  try{
-    const q=new URLSearchParams(location.search).get('edit');
-    if(q){localStorage.setItem('fuyu-edit-token',q);return q}
-    const m=location.hash.match(/(?:^|#|&)edit=([^&]+)/);if(m){const t=decodeURIComponent(m[1]);localStorage.setItem('fuyu-edit-token',t);return t}
-    return localStorage.getItem('fuyu-edit-token')||''
-  }catch(e){return ''}}
-let GH_TOKEN=readEditToken();
+/* 共用雲端：任何人只要打開同一連結／捷徑，編輯會即時寫入 Firebase，無需貼權杖 */
+const FB_URL='https://fuyu-monogatari-2026-default-rtdb.firebaseio.com/store.json';
 const listeners={};
-let STORE={},storeSha=null,pushTimer=null,pullBusy=false,pushBusy=false,lastRemote='',syncStatus='',skipPullUntil=0;
+let STORE={},pushTimer=null,pullBusy=false,pushBusy=false,lastRemote='',syncStatus='',skipPullUntil=0;
 function loadLocal(){try{return JSON.parse(localStorage.getItem(DBKEY))||{}}catch(e){return {}}}
 function saveLocal(){try{localStorage.setItem(DBKEY,JSON.stringify(STORE))}catch(e){}}
 function emit(name){const cols=STORE[name]||{};const sn={docs:Object.keys(cols).map(id=>({id,data:()=>cols[id]}))};(listeners[name]||[]).forEach(fn=>{try{fn(sn)}catch(e){}})}
 function emitAll(){Object.keys(listeners).forEach(emit);try{if(typeof applyStore==='function'){applyStore();if(typeof renderTrip==='function')renderTrip();if(typeof renderTabs==='function')renderTabs();if(typeof renderView==='function'&&!edit)renderView()}}catch(e){}}
 function isEditing(){return !!(edit||(typeof eF!=='undefined'&&eF)||(typeof eW!=='undefined'&&eW)||(typeof eS!=='undefined'&&eS)||(typeof eP!=='undefined'&&eP)||(typeof eC!=='undefined'&&eC))}
-function setSync(msg,ok){syncStatus=msg;const el=document.getElementById('sync');if(el){el.textContent=msg;el.className='tx '+(ok===false?'bad':ok?'ok':'')}
- const b=document.getElementById('syncBtn');if(b)b.style.display=GH_TOKEN?'none':''}
-function b64encode(str){return btoa(unescape(encodeURIComponent(str)))}
-function b64decode(str){try{const bin=atob(String(str||'').replace(/\s/g,''));if(typeof TextDecoder!=='undefined'){const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new TextDecoder('utf-8').decode(bytes)}return decodeURIComponent(escape(bin))}catch(e){return ''}}
-function authHeaders(extra){const h=Object.assign({'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},extra||{});if(GH_TOKEN)h.Authorization='Bearer '+GH_TOKEN;return h}
-function openTok(){const box=document.getElementById('tokbox');if(!box)return;box.classList.add('on');const inp=document.getElementById('tokIn');if(inp){inp.value='';setTimeout(()=>inp.focus(),50)}}
-function closeTok(){document.getElementById('tokbox')?.classList.remove('on')}
-function setTokErr(msg){const el=document.getElementById('tokErr');if(el)el.textContent=msg||''}
-async function verifyToken(t){
- const h=authHeaders({Authorization:'Bearer '+t,'Content-Type':'application/json'});
- const r=await fetch(API_URL+'?t='+Date.now(),{headers:h,cache:'no-store'});
- if(r.status===401)throw new Error('權杖無效或已失效，請重新建立');
- if(r.status===403)throw new Error('無法讀取專案：請確認有選 fuyu-monogatari-2026');
- if(!r.ok)throw new Error('驗證失敗 HTTP '+r.status);
- const j=await r.json();
- // 關鍵：只讀權杖 GET 會過、PUT 會 403。這裡直接測寫入。
- const put=await fetch(API_URL,{method:'PUT',headers:h,body:JSON.stringify({message:'verify write '+Date.now(),content:j.content,sha:j.sha})});
- if(put.status===401)throw new Error('權杖無效或已失效，請重新建立');
- if(put.status===403)throw new Error('此權杖只有「讀取」：請改成 Contents → Read and write 後重建');
- if(!put.ok){const tx=await put.text();throw new Error('寫入測試失敗 '+put.status+' '+(tx||'').slice(0,60))}
- const out=await put.json();return (out.content&&out.content.sha)||j.sha}
-async function applyToken(t){t=String(t||'').trim();if(!t){setTokErr('請先貼上權杖');return false}
- try{setTokErr('');setSync('驗證權杖（含寫入測試）…');
-  const sha=await verifyToken(t);GH_TOKEN=t;storeSha=sha;
-  try{localStorage.setItem('fuyu-edit-token',t)}catch(e){}
-  closeTok();setSync('雙機同步已啟用 · 編輯會自動存雲端',true);
-  await remotePull(true);return true;
- }catch(e){const msg=String(e.message||e);setTokErr(msg);setSync(msg,false);openTok();return false}}
+function setSync(msg,ok){syncStatus=msg;const el=document.getElementById('sync');if(el){el.textContent=msg;el.className='tx '+(ok===false?'bad':ok?'ok':'')}}
+function deviceTag(){return navigator.userAgent.includes('iPhone')?'iPhone':(navigator.userAgent.includes('Android')?'Android':'web')}
 async function remotePull(force){if(pullBusy)return;if(!force&&Date.now()<skipPullUntil)return;if(!force&&isEditing())return;pullBusy=true;try{
-  let raw='',sha=null;
-  // 有權杖：一律用 API（即時、無 CDN 快取）。無權杖才用 raw。
-  if(GH_TOKEN){
-    const m=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});
-    if(m.status===401||m.status===403)throw new Error(m.status===401?'權杖無效':'權杖權限不足');
-    if(!m.ok)throw new Error('讀取雲端失敗 '+m.status);
-    const j=await m.json();sha=j.sha;raw=b64decode(String(j.content||'').replace(/\n/g,''));
-  }else{
-    const r=await fetch(RAW_URL+'?t='+Date.now(),{cache:'no-store'});
-    if(!r.ok)throw new Error('讀取雲端失敗 '+r.status);
-    raw=await r.text();
-  }
-  if(sha)storeSha=sha;
-  if(raw===lastRemote){setSync(GH_TOKEN?'雲端已連線 · 可自動儲存':'已讀取雲端 · 請啟用寫入',!!GH_TOKEN);return}
-  // 若本機剛存過且較新，不要被舊快取蓋掉
-  try{const remote=JSON.parse(raw||'{}');const loc=STORE&&STORE.meta&&STORE.meta.updatedAt;const rem=remote.meta&&remote.meta.updatedAt;
-   if(loc&&rem&&loc>rem&&Object.keys(STORE).length){setSync('保留本機較新資料，稍後再同步',true);return}}catch(e){}
-  lastRemote=raw;STORE=JSON.parse(raw||'{}');saveLocal();
+  const r=await fetch(FB_URL+'?t='+Date.now(),{cache:'no-store'});
+  if(!r.ok)throw new Error('讀取雲端失敗 '+r.status);
+  const raw=await r.text();
+  if(raw===lastRemote||raw==='null'){if(raw==='null'&&Object.keys(STORE).length){setSync('雲端尚無資料，將上傳本機',true);await remotePush();return}
+   setSync('雲端已連線 · 編輯會自動儲存',true);return}
+  try{const remote=JSON.parse(raw||'{}');const loc=STORE&&STORE.meta&&STORE.meta.updatedAt;const rem=remote&&remote.meta&&remote.meta.updatedAt;
+   if(loc&&rem&&loc>rem&&Object.keys(STORE).length){setSync('保留本機較新資料，稍後再同步',true);return}
+   lastRemote=raw;STORE=remote&&typeof remote==='object'?remote:{};}catch(e){throw new Error('雲端資料格式錯誤')}
+  saveLocal();
   if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]});
-  setSync((GH_TOKEN?'已同步 · ':'已讀取雲端 · ')+new Date().toLocaleTimeString(),!!GH_TOKEN);emitAll();
+  setSync('已同步 · '+new Date().toLocaleTimeString(),true);emitAll();
  }catch(e){if(!Object.keys(STORE).length){STORE=loadLocal();emitAll()}setSync('讀取失敗：'+e.message,false)}
  finally{pullBusy=false}}
 let pushChain=Promise.resolve();
-async function remotePush(){if(!GH_TOKEN){setSync('尚未啟用雲端儲存（僅存本機）',false);saveLocal();return false}
+async function remotePush(){
  if(pushBusy){await new Promise(r=>{const t=setInterval(()=>{if(!pushBusy){clearInterval(t);r()}},40);setTimeout(()=>{clearInterval(t);r()},8000)});if(pushBusy)return false}
  pushBusy=true;
  try{setSync('儲存到雲端中…');
   if(STORE.blobs){const keys=Object.keys(STORE.blobs);for(const k of keys){if(String(STORE.blobs[k]).length>120000)delete STORE.blobs[k]}}
-  STORE.meta=Object.assign({},STORE.meta||{},{updatedAt:new Date().toISOString(),by:navigator.userAgent.includes('iPhone')?'iPhone':(navigator.userAgent.includes('Android')?'Android':'web')});
+  STORE.meta=Object.assign({},STORE.meta||{},{updatedAt:new Date().toISOString(),by:deviceTag()});
   const body=JSON.stringify(STORE);saveLocal();
-  // 每次寫入前刷新 sha，降低 409；衝突時只更新 sha，绝不把本機 STORE 清掉
-  const g=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});
-  if(g.status===401||g.status===403)throw new Error(g.status===401?'權杖無效，請重新啟用':'權杖權限不足');
-  if(g.ok)storeSha=(await g.json()).sha;
-  let r=await fetch(API_URL,{method:'PUT',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify({message:'sync '+new Date().toISOString(),content:b64encode(body),sha:storeSha||undefined})});
-  if(r.status===409){const g2=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});if(g2.ok)storeSha=(await g2.json()).sha;
-   r=await fetch(API_URL,{method:'PUT',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify({message:'sync retry '+new Date().toISOString(),content:b64encode(body),sha:storeSha||undefined})})}
-  if(r.status===401||r.status===403)throw new Error(r.status===401?'權杖無效或已撤銷，請重建權杖':'權限不足：Contents 需 Read and write');
+  const r=await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body,cache:'no-store'});
   if(!r.ok){const t=await r.text();throw new Error('寫入失敗 '+r.status+' '+(t||'').slice(0,80))}
-  const j=await r.json();storeSha=j.content&&j.content.sha;lastRemote=body;skipPullUntil=Date.now()+5000;
-  // 立刻用 API 回讀確認，避免重整時讀到舊 CDN
-  try{const chk=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});if(chk.ok){const cj=await chk.json();storeSha=cj.sha;const got=b64decode(String(cj.content||'').replace(/\n/g,''));if(got)lastRemote=got}}catch(e){}
+  lastRemote=body;skipPullUntil=Date.now()+2500;
+  try{const chk=await fetch(FB_URL+'?t='+Date.now(),{cache:'no-store'});if(chk.ok){const got=await chk.text();if(got&&got!=='null')lastRemote=got}}catch(e){}
   setSync('已同步到雲端 · '+new Date().toLocaleTimeString(),true);return true;
- }catch(e){setSync('儲存失敗：'+e.message,false);if(/權杖|權限|401|403/.test(String(e.message))){GH_TOKEN='';try{localStorage.removeItem('fuyu-edit-token')}catch(x){}setTimeout(openTok,400)}throw e}
+ }catch(e){setSync('儲存失敗：'+e.message,false);saveLocal();throw e}
  finally{pushBusy=false}}
 function queuePush(){clearTimeout(pushTimer);pushTimer=setTimeout(()=>{flushPush().catch(()=>{})},700)}
 function flushPush(){clearTimeout(pushTimer);pushChain=pushChain.then(()=>remotePush(),()=>remotePush());return pushChain}
@@ -352,13 +298,9 @@ async function uploadBlob(file){const id=(crypto.randomUUID?crypto.randomUUID():
  const dataUrl=await fileToDataUrl(file);STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;blobMap[id]=dataUrl;
  try{await idbPut(id,file)}catch(e){}saveLocal();queuePush();return {id}}
 const claude={async use(kind){if(kind==='user')return {canEdit(){return true}};if(kind==='db')return localDb;if(kind==='assets')return {upload:uploadBlob};return null}};
-document.getElementById('syncBtn')?.addEventListener('click',openTok);
-document.getElementById('tokClose')?.addEventListener('click',closeTok);
-document.getElementById('tokSave')?.addEventListener('click',async()=>{const v=document.getElementById('tokIn')?.value;const btn=document.getElementById('tokSave');if(btn)btn.disabled=true;try{if(!(await applyToken(v))){/* keep open */}else await remotePull(true)}finally{if(btn)btn.disabled=false}});
-document.getElementById('tokbox')?.addEventListener('click',e=>{if(e.target.id==='tokbox')closeTok()});
 setInterval(()=>{if(!document.hidden)remotePull().catch(()=>{})},3000);
-addEventListener('visibilitychange',()=>{if(!document.hidden){GH_TOKEN=readEditToken();remotePull(true).catch(()=>{})}});
-addEventListener('pagehide',()=>{clearTimeout(pushTimer);if(GH_TOKEN)remotePush().catch(()=>{})});
+addEventListener('visibilitychange',()=>{if(!document.hidden)remotePull(true).catch(()=>{})});
+addEventListener('pagehide',()=>{clearTimeout(pushTimer);remotePush().catch(()=>{})});
 // 預設行程；後台儲存後會以資料庫內容覆蓋
 const BASE=[{"d":"11/26","w":"四","c":"札幌","title":"抵達北海道・札幌初雪","items":[{"m":"抵達後前往札幌市區","n":"桃園國際機場 → 新千歲機場","t":"06:00","img":"images/DAY1-01.jpg"},{"m":"海鮮丼、北海道早市氣氛","n":"二條市場","t":"08:00","img":"images/DAY1-02.jpg"},{"m":"有頂棚的商店街，下雪也能逛","n":"狸小路商店街","t":"10:30","img":"images/DAY1-03.jpg"},{"m":"散步路線：從地下鐵「中島公園站」出來→漫步雪景菖蒲池→參觀百年藍白色木造洋館「豐平館」拍照 →日本庭園","n":"中島公園","t":"13:30","img":"images/DAY1-04.jpg"},{"m":"順路看 札幌白色燈樹節 與 慕尼黑聖誕市集 點燈","n":"大通公園","t":"16:00","img":"images/DAY1-05.jpg"},{"m":"札幌最熱鬧的夜晚街區","n":"薄野","t":"18:00","img":"images/DAY1-06.jpg"}]},{"d":"11/27","w":"五","c":"北海道","title":"北海道","items":[{"m":"","n":"札幌→旭川","t":"7:30","img":"images/DAY2-01.jpg"},{"m":"","n":"旭山動物園","t":"10:00","img":"images/DAY2-02.jpg"},{"m":"","n":"美瑛 & 四季彩之丘","t":"13:15","img":"images/DAY2-03.jpg"},{"m":"","n":"富良野 森林精靈露臺","t":"15:30","img":"images/DAY2-04.jpg"},{"m":"","n":"返回札幌市區","t":"17:00","img":"images/DAY2-05.jpg"}]},{"d":"11/28","w":"六","c":"北海道","title":"北海道","items":[{"m":"","n":"北海道神宮","t":"08:00","img":"images/DAY3-01.jpg"},{"m":"","n":"定山溪神社 & 溫泉日歸泡湯","t":"09:40","img":"images/DAY3-02.jpg"},{"m":"搭乘定山溪直達小樽巴士，或經札幌轉乘 JR","n":"前往小樽","t":"13:30"},{"m":"","n":"小樽運河  ","t":"14:40","img":"images/DAY3-04.jpg"},{"m":"","n":"堺町通","t":"15:00","img":"images/DAY3-05.jpg"},{"m":"在「小樽站前公車總站」3 號月台搭乘 中央巴士 9 號線（天狗山線），約 20 分鐘即可直達「天狗山纜車山腳站」","n":"前往山腳站","t":"16:00"},{"m":"","n":"購票與搭乘纜車","t":"16:20"},{"m":"山頂有 5 個不同角度的展望台（包含重現《First Love 初戀》場景的地點）、天狗山神社、天狗館以及小景觀餐廳/咖啡廳","n":"山頂展望台賞夜景","t":"16:30","img":"images/DAY3-08.jpg"},{"m":"搭纜車下山，於山腳站搭乘公車返回小樽站前或小樽運河區享用晚餐","n":"搭纜車下山與返程","t":"17:30"},{"m":"","n":"返回札幌","t":"19:00"}]},{"d":"11/29","w":"日","c":"移動日","title":"北海道 → 東京","items":[{"m":"抵達東京，入住飯店","n":"新千歲機場 → 羽田機場","t":""},{"m":"","n":"莆田","t":""}]},{"d":"11/30","w":"一","c":"東京","title":"東京","items":[{"m":"","n":"原宿","t":"10:30","img":"images/DAY5-01.jpg"},{"m":"5 Chome-17-3 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"花園神社","t":"14:00","img":"images/DAY5-02.jpg"},{"m":"ピカデリー Ｂ１, ２Ｆ, 3 Chome-15-15 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"無印良品 新宿靖國通","t":"17:00","img":"images/DAY5-03.jpg"},{"m":"","n":"新宿","t":"19:00","img":"images/DAY5-04.jpg"}]},{"d":"12/01","w":"二","c":"東京","title":"東京（待安排）","items":[{"m":"候選","n":"淺草寺","t":"","img":"images/DAY6-01.jpg"},{"m":"候選","n":"秋葉原","t":"","img":"images/DAY6-02.jpg"}]},{"d":"12/02","w":"三","c":"東京","title":"東京海洋迪士尼","items":[{"m":"整天","n":"東京迪士尼","t":"","img":"images/DAY7-01.jpg"}]},{"d":"12/03","w":"四","c":"川越","title":"小江戶川越","items":[{"m":"","n":"川越一番街商店街","t":"","img":"images/DAY8-01.jpg"},{"m":"江戶風情的黑瓦老街","n":"藏造老屋街道","t":"","img":"images/DAY8-02.jpg"}]},{"d":"12/04","w":"五","c":"成田","title":"成田・返程","items":[{"m":"餐廳","n":"早餐","t":"9:00"},{"m":"購物","n":"酒酒井 Outlet","t":"10:30","img":"images/DAY9-02.jpg"},{"m":"","n":"成田山新勝寺","t":"","img":"images/DAY9-03.jpg"},{"m":"返台","n":"成田機場 → 桃園國際機場","t":"","img":"images/DAY9-04.jpg"}]}];
 let DAYS=JSON.parse(JSON.stringify(BASE)),cur=0,edit=false,db=localDb,canEdit=true,draft=null;
@@ -389,7 +331,7 @@ async function saveDayDraft(showDone){if(!edit||!draft)return;const m=document.g
   DAYS[cur]={...DAYS[cur],title:draft.title,c:draft.c,items:JSON.parse(JSON.stringify(items))};
   if(showDone){edit=false;draft=null;show(cur);setSync('行程已存上雲端',true)}
   else if(m)m.textContent='已存上雲端'}
- catch(err){if(m)m.textContent='儲存失敗：'+(err&&err.message||'請啟用雲端儲存');setSync('儲存失敗',false);if(!GH_TOKEN)openTok()}}
+ catch(err){if(m)m.textContent='儲存失敗：'+(err&&err.message||'請稍後再試');setSync('儲存失敗',false)}}
 box.addEventListener('input',e=>{if(!edit)return;const f=e.target.dataset.f,it=e.target.closest('.item');
  if(!f)return;if(it)draft.items[+it.dataset.i][f]=e.target.value;else draft[f]=e.target.value;
  clearTimeout(daySaveTimer);daySaveTimer=setTimeout(()=>saveDayDraft(false),1200)});
@@ -405,8 +347,7 @@ box.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;c
 show(0);
 (async()=>{try{await remotePull();await hydrateBlobs();const [u,d]=await Promise.all([claude.use('user'),claude.use('db')]);
  db=d;canEdit=true;if(d)watchTrip();if(d&&canEdit)watchLedger();applyStore();renderTrip();
- setSync(GH_TOKEN?'雲端已連線 · 編輯會自動儲存':'點下方按鈕啟用雲端儲存（iPhone 捷徑必做）',!!GH_TOKEN);
- if(!GH_TOKEN)setTimeout(openTok,600);
+ setSync('雲端已連線 · 編輯會自動儲存',true);
  if(d){d.collection('days').onSnapshot(sn=>{sn.docs.forEach(doc=>{const k=+doc.id.slice(1),v=doc.data();
    if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
    renderTabs();if(!edit)renderView()},()=>{})}
