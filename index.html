@@ -6,12 +6,14 @@
 <title>ふゆものがたり · 北海道 × 東京 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Noto+Serif+TC:wght@400;600&family=Zen+Maru+Gothic:wght@500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#eef3f8;--bg2:#dfe8f1;--card:rgba(255,255,255,.72);--ink:#1d2b3a;--mute:#5d7185;--line:rgba(60,90,120,.18);--acc:#3d6f9e;--acc2:#a8c4de;--hero1:#16283d;--hero2:#4a7298;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* kawaii手書き文字（spicy-sweet）— 僅套用於中日文漢字／假名等 */
+@font-face{font-family:"KTEGAKI";src:url("fonts/KTEGAKI.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+3000-30FF,U+31F0-31FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF,U+20000-2A6DF,U+2F800-2FA1F}
+:root{--bg:#eef3f8;--bg2:#dfe8f1;--card:rgba(255,255,255,.72);--ink:#1d2b3a;--mute:#5d7185;--line:rgba(60,90,120,.18);--acc:#3d6f9e;--acc2:#a8c4de;--hero1:#16283d;--hero2:#4a7298;--jp:"KTEGAKI","Noto Serif TC","Songti TC",serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1824;--bg2:#142234;--card:rgba(24,40,58,.7);--ink:#e8f0f8;--mute:#91a8be;--line:rgba(160,195,225,.16);--acc:#8ebbe3;--acc2:#37597c;--hero1:#0a121c;--hero2:#254666}}
 :root[data-theme="dark"]{--bg:#0e1824;--bg2:#142234;--card:rgba(24,40,58,.7);--ink:#e8f0f8;--mute:#91a8be;--line:rgba(160,195,225,.16);--acc:#8ebbe3;--acc2:#37597c;--hero1:#0a121c;--hero2:#254666}
 html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Serif TC","Songti TC",serif;line-height:1.75;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--jp);font-size:16.5px;line-height:1.8;overflow-x:hidden}
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 500px at 15% 0,var(--bg2),transparent),radial-gradient(700px 500px at 100% 60%,var(--bg2),transparent)}
 .hero{position:relative;color:#f2f7fc;text-align:center;padding:96px 20px 80px;background:linear-gradient(170deg,var(--hero1),var(--hero2));overflow:hidden}
 .hero::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:70px;background:var(--bg);clip-path:polygon(0 70%,12% 40%,24% 62%,38% 22%,52% 58%,66% 30%,80% 60%,92% 38%,100% 62%,100% 100%,0 100%);opacity:.95}
@@ -28,7 +30,7 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .card{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 10px 30px -18px rgba(20,50,90,.35)}
 .flights{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .fl .d{font-family:"Cormorant Garamond",serif;font-size:26px;color:var(--acc)}
-.fl .d small,.fl .dw{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yuanti TC",sans-serif;font-size:13px;font-weight:500;letter-spacing:.18em;color:var(--mute);vertical-align:middle;margin-left:4px}
+.fl .d small,.fl .dw{font-family:var(--jp);font-size:13px;font-weight:500;letter-spacing:.12em;color:var(--mute);vertical-align:middle;margin-left:4px}
 .fl .r{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:15px}
 .fl .r i{flex:1;border-top:1px dashed var(--mute);position:relative;font-style:normal}
 .fl .r i svg{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;fill:var(--acc);opacity:.9;display:block;pointer-events:none}
@@ -98,7 +100,7 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .shgrid .sp{flex:none}
 #mb{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:0}
 #mb span{display:block;width:20px;height:2px;background:var(--ink);border-radius:2px}
-#jukebox{position:fixed;z-index:51;top:calc(env(safe-area-inset-top,0px) + 12px);left:calc(12px + 52px);width:min(210px,calc(100vw - 76px));padding:8px 10px;border-radius:14px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -16px rgba(20,50,90,.4);display:flex;flex-direction:column;gap:6px;font-family:"Zen Maru Gothic","Noto Serif TC",sans-serif}
+#jukebox{position:fixed;z-index:51;top:calc(env(safe-area-inset-top,0px) + 12px);left:calc(12px + 52px);width:min(210px,calc(100vw - 76px));padding:8px 10px;border-radius:14px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -16px rgba(20,50,90,.4);display:flex;flex-direction:column;gap:6px;font-family:var(--jp)}
 #jukebox .jb-row{display:flex;align-items:center;gap:8px}
 #jukebox .jb-meta{flex:1;min-width:0;line-height:1.25}
 #jukebox .jb-label{font-size:9px;letter-spacing:.18em;color:var(--mute);text-transform:uppercase}
@@ -116,7 +118,7 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #drawer .ov{position:absolute;inset:0;background:rgba(10,20,35,.45);opacity:0;transition:opacity .25s}
 #drawer .pn{position:absolute;top:0;bottom:0;left:0;width:min(78vw,300px);background:var(--bg);border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 72px) 18px 24px;transform:translateX(-102%);transition:transform .28s;overflow-y:auto}
 #drawer.open{pointer-events:auto}#drawer.open .ov{opacity:1}#drawer.open .pn{transform:none}
-.dt{font-family:"Cormorant Garamond",serif;letter-spacing:.25em;color:var(--mute);margin-bottom:14px}
+.dt{font-family:"Cormorant Garamond",var(--jp);letter-spacing:.18em;color:var(--mute);margin-bottom:14px}
 .dl button{display:block;width:100%;text-align:left;font:inherit;font-size:16px;letter-spacing:.12em;padding:12px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
 .dl button.act{color:var(--acc);font-weight:600}
 .sec{display:none}.sec.on{display:block}
@@ -125,8 +127,8 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .pvd{width:140px;height:100px;object-fit:cover;border-radius:12px;display:block;margin:4px 0}
 @media(max-width:420px){.ti{width:84px;height:64px}}
 #lb{position:fixed;inset:0;z-index:60;background:rgba(5,12,22,.82);display:none;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}#lb.on{display:flex}#lb img{max-width:100%;max-height:100%;border-radius:14px}
-h1{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yuanti TC","Noto Serif TC",sans-serif;font-weight:500;letter-spacing:.14em;text-shadow:0 3px 14px rgba(10,25,45,.35)}
-.mini{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Serif TC",sans-serif;font-size:15px;letter-spacing:.5em;text-indent:.5em;margin-top:16px;opacity:.9;display:flex;align-items:center;justify-content:center;gap:12px}
+h1{font-family:var(--jp);font-weight:400;letter-spacing:.1em;text-shadow:0 3px 14px rgba(10,25,45,.35)}
+.mini{font-family:var(--jp);font-size:16px;letter-spacing:.35em;text-indent:.35em;margin-top:16px;opacity:.9;display:flex;align-items:center;justify-content:center;gap:12px}
 .mini::before,.mini::after{content:"";width:28px;height:1px;background:currentColor;opacity:.5}
 .acs{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}.acs small{display:block;color:var(--mute);font-size:12px;letter-spacing:.1em}.acs b{font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:400}
 .dh{display:flex;justify-content:space-between;margin:16px 0 2px;color:var(--acc);letter-spacing:.1em;font-size:14px}
