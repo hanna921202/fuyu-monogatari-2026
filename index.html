@@ -96,6 +96,18 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .shgrid .sp{flex:none}
 #mb{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:0}
 #mb span{display:block;width:20px;height:2px;background:var(--ink);border-radius:2px}
+#jukebox{position:fixed;z-index:51;top:calc(env(safe-area-inset-top,0px) + 12px);left:calc(12px + 52px);width:min(210px,calc(100vw - 76px));padding:8px 10px;border-radius:14px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -16px rgba(20,50,90,.4);display:flex;flex-direction:column;gap:6px;font-family:"Zen Maru Gothic","Noto Serif TC",sans-serif}
+#jukebox .jb-row{display:flex;align-items:center;gap:8px}
+#jukebox .jb-meta{flex:1;min-width:0;line-height:1.25}
+#jukebox .jb-label{font-size:9px;letter-spacing:.18em;color:var(--mute);text-transform:uppercase}
+#jukebox .jb-title{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#jukebox .jb-sub{font-size:10px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#jukebox .jb-btns{display:flex;gap:4px;flex:0 0 auto}
+#jukebox button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.35);color:var(--ink);cursor:pointer;font-size:12px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center}
+#jukebox button:hover{border-color:var(--acc);color:var(--acc)}
+#jukebox button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+@media(prefers-color-scheme:dark){#jukebox button{background:rgba(20,40,60,.35)}}
+:root[data-theme="dark"] #jukebox button{background:rgba(20,40,60,.35)}
 #drawer{position:fixed;inset:0;z-index:40;pointer-events:none}
 #drawer .ov{position:absolute;inset:0;background:rgba(10,20,35,.45);opacity:0;transition:opacity .25s}
 #drawer .pn{position:absolute;top:0;bottom:0;left:0;width:min(78vw,300px);background:var(--bg);border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 72px) 18px 24px;transform:translateX(-102%);transition:transform .28s;overflow-y:auto}
@@ -193,6 +205,8 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .jb{margin-top:10px}.jh{font-size:15px}.jq{font-size:12px}.jl{font-size:11px}
 #mb{top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;width:36px;height:36px;border-radius:10px;gap:4px}
 #mb span{width:16px}
+#jukebox{top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(8px + 44px);width:min(180px,calc(100vw - 64px));padding:6px 8px;border-radius:12px}
+#jukebox .jb-title{font-size:11px}#jukebox button{width:28px;height:28px;font-size:11px}
 #drawer .pn{width:min(72vw,260px);padding:calc(env(safe-area-inset-top,0px) + 56px) 14px 20px}
 .dl button{font-size:14px;padding:10px 8px;letter-spacing:.08em}
 .dt{font-size:13px;margin-bottom:10px}
@@ -213,6 +227,20 @@ label{font-size:11px;margin-bottom:6px}
 </head>
 <body>
 <button id="mb" aria-label="選單" aria-expanded="false"><span></span><span></span><span></span></button>
+<div id="jukebox" aria-label="迷你點唱機">
+ <audio id="jb-audio" preload="metadata" crossorigin="anonymous"></audio>
+ <div class="jb-row">
+  <div class="jb-meta">
+   <div class="jb-label">♪ Jukebox</div>
+   <div class="jb-title" id="jb-title">—</div>
+   <div class="jb-sub" id="jb-sub">點擊播放</div>
+  </div>
+  <div class="jb-btns">
+   <button type="button" id="jb-play" aria-label="播放／暫停" title="播放／暫停">▶</button>
+   <button type="button" id="jb-next" aria-label="下一首" title="下一首">⏭</button>
+  </div>
+ </div>
+</div>
 <div id="drawer"><div class="ov"></div><nav class="pn"><div class="dt">ふゆものがたり · 目錄</div><div class="dl"></div></nav></div>
 <header class="hero">
 <canvas id="snow"></canvas>
@@ -678,6 +706,73 @@ function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>
  if(!edit)renderView()}catch(e){booted=true;try{await remotePull(true);applyStore();renderTrip()}catch(e2){setSync('啟動同步失敗',false)}}})();
 applyStore();if(!edit)renderView();
 renderTrip();
+
+/* ===== 迷你點唱機（左上固定，不自動播放）===== */
+(()=>{
+ const TRACKS=[
+  {title:'Winter (The Wind Can Be Still)',sub:'Stardew Valley OST',
+   src:'https://archive.org/download/stardew_valley_ost/Stardew%20Valley/28%20Winter%20(The%20Wind%20Can%20Be%20Still).mp3'},
+  {title:'First Love',sub:'宇多田光 · 鋼琴純音樂',
+   src:'https://archive.org/download/First_Love_piano_version/FirstLovepianoversion.mp3',
+   alts:[
+    'https://archive.org/download/utada-hikaru-first-love/Utada%20Hikaru%20-%20First%20Love.mp3'
+   ]}
+ ];
+ const audio=document.getElementById('jb-audio');
+ const titleEl=document.getElementById('jb-title');
+ const subEl=document.getElementById('jb-sub');
+ const playBtn=document.getElementById('jb-play');
+ const nextBtn=document.getElementById('jb-next');
+ if(!audio||!playBtn)return;
+ let idx=0, altI=0;
+ function show(){
+  const t=TRACKS[idx];
+  titleEl.textContent=t.title;
+  subEl.textContent=t.sub;
+  playBtn.textContent=audio.paused?'▶':'❚❚';
+  playBtn.classList.toggle('on',!audio.paused);
+ }
+ function load(i,autoplay){
+  idx=(i+TRACKS.length)%TRACKS.length;
+  altI=0;
+  const t=TRACKS[idx];
+  audio.src=t.src;
+  audio.load();
+  show();
+  if(autoplay){
+   audio.addEventListener('canplay',()=>{audio.play().catch(()=>{})},{once:true});
+  }
+  audio.onerror=()=>{
+   const alts=t.alts||[];
+   if(altI<alts.length){
+    audio.src=alts[altI++];
+    audio.load();
+    return;
+   }
+   subEl.textContent='無法載入音訊';
+  };
+ }
+ playBtn.addEventListener('click',async()=>{
+  if(!audio.getAttribute('src')&&!audio.src)load(idx,false);
+  try{
+   if(audio.paused){
+    await audio.play();
+    playBtn.textContent='❚❚';
+    playBtn.classList.add('on');
+    subEl.textContent=TRACKS[idx].sub;
+   }else{
+    audio.pause();
+    playBtn.textContent='▶';
+    playBtn.classList.remove('on');
+   }
+  }catch(e){subEl.textContent='請再點一次播放'}
+ });
+ nextBtn.addEventListener('click',()=>{const was=!audio.paused;load(idx+1,was)});
+ audio.addEventListener('ended',()=>load(idx+1,true));
+ audio.addEventListener('play',()=>{playBtn.textContent='❚❚';playBtn.classList.add('on')});
+ audio.addEventListener('pause',()=>{if(!audio.ended){playBtn.textContent='▶';playBtn.classList.remove('on')}});
+ load(0,false);
+})();
 </script>
 </body>
 </html>
