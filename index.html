@@ -74,6 +74,7 @@ textarea{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);b
 .edbox{margin-top:14px}
 .shop{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
 .sp{padding:0;overflow:hidden}.sp img,.sp .ph{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--bg2)}
+.sp img{cursor:zoom-in}
 .sp .ph{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--acc)}
 .sp .sb{padding:12px 16px 14px}.sp .n{font-weight:600}.sp .m{font-size:13px;color:var(--mute)}.sp .nt{font-size:13px;margin-top:4px;white-space:pre-wrap}
 .sp.got .n{text-decoration:line-through;opacity:.6}.sp.got img{opacity:.55}
@@ -500,7 +501,7 @@ let CATS=['美食','美妝','電玩','其他'];
 const catOf=x=>{const c=String(x&&x.cat||'').trim();return CATS.includes(c)?c:(CATS[CATS.length-1]||'其他')};
 const shBox=document.getElementById('shop'),IMG=id=>blobSrc(id);
 async function saveShop(extra){const payload=Object.assign({list:SH,cats:CATS},extra||{});await db.collection('trip').doc('shopping').set(payload)}
-function shopCard(x,i,compact){return `<div class="card sp${x.bought?' got':''}">${IMG(x.img)?`<img src="${IMG(x.img)}" alt="${esc(x.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
+function shopCard(x,i,compact){return `<div class="card sp${x.bought?' got':''}">${IMG(x.img)?`<img class="zoom" src="${IMG(x.img)}" alt="${esc(x.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
 function startEditCat(cat){shEditCat=cat||(CATS[0]||'其他');shFocus=shEditCat;dS=cl(SH.filter(x=>catOf(x)===shEditCat));eS=true;eCat=false;renderShop()}
 function renderShop(){
  const done=SH.filter(x=>x.bought).length;
@@ -716,7 +717,7 @@ box.addEventListener('change',async e=>{const t=e.target;if(!t.dataset.up||!edit
  try{const as=await claude.use('assets');if(!as)throw 0;const r=await as.upload(await shrink(t.files[0]));draft.items[i].img=r.id;renderEdit()}catch(err){m.textContent='圖片上傳失敗，請確認有編輯權限'}});
 const lb=document.createElement('div');lb.id='lb';lb.innerHTML='<img alt="">';document.body.appendChild(lb);
 lb.onclick=()=>lb.classList.remove('on');
-document.addEventListener('click',e=>{const t=e.target;if(t.classList&&t.classList.contains('ti')){lb.firstChild.src=t.src;lb.classList.add('on')}});
+document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='IMG'&&t.src&&t.classList&&(t.classList.contains('ti')||t.classList.contains('zoom'))){lb.firstChild.src=t.src;lb.classList.add('on')}});
 
 function keepImgs(k,items){const base=(BASE[k]&&BASE[k].items)||[];return (items||[]).map(it=>{if(it.img||Object.prototype.hasOwnProperty.call(it,'img'))return it;const hit=base.find(b=>b.img&&String(b.n).trim()===String(it.n||'').trim());return hit?{...it,img:hit.img}:it})}
 function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>{const k=+id.slice(1),v=daysS[id];if(DAYS[k]&&v)DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});const t=STORE.trip||{};if(t.flights&&t.flights.list!=null)FL=cl(asList(t.flights.list));if(t.wishes)WS=cl({hk:t.wishes.hk||[],tk:t.wishes.tk||[]});if(t.shopping){if(t.shopping.list!=null)SH=cl(asList(t.shopping.list));if(Array.isArray(t.shopping.cats)&&t.shopping.cats.length)CATS=t.shopping.cats.map(String)}if(t.packing&&t.packing.groups)PK=cl(t.packing.groups);if(t.currency&&t.currency.list!=null)CR=cl(asList(t.currency.list));if(t.stays&&t.stays.list!=null)STAY.set(asList(t.stays.list));if(t.ootd&&t.ootd.list!=null)OOTD.set(asList(t.ootd.list));if(t.journal&&t.journal.list!=null)JNL.set(asList(t.journal.list));const led=STORE.ledger&&STORE.ledger.main;if(led)LG={budget:led.budget||0,list:cl(asList(led.list||[]))}}
