@@ -6,9 +6,11 @@
 <title>ふゆものがたり · 北海道 × 東京 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Noto+Serif+TC:wght@400;600&family=Zen+Maru+Gothic:wght@500&display=swap" rel="stylesheet">
 <style>
-/* 何某手寫體（日系手寫＋繁中補字，OFL）缺字再退回 Noto Serif TC */
-@font-face{font-family:"NaniFont";src:url("https://cdn.jsdelivr.net/gh/max32002/nanifont@1.046/webfont/NaniFont-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/gh/max32002/nanifont@1.046/webfont/NaniFont-Regular.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
-:root{--bg:#eef3f8;--bg2:#dfe8f1;--card:rgba(255,255,255,.72);--ink:#1d2b3a;--mute:#5d7185;--line:rgba(60,90,120,.18);--acc:#3d6f9e;--acc2:#a8c4de;--hero1:#16283d;--hero2:#4a7298;--jp:"NaniFont","Noto Serif TC","Songti TC","PingFang TC","Microsoft JhengHei",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* 日文假名：kawaii手書き文字；中文：何某手寫體 Light（較細） */
+@font-face{font-family:"KTEGAKI";src:url("fonts/KTEGAKI.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+3040-309F,U+30A0-30FF,U+31F0-31FF}
+@font-face{font-family:"NaniFont";src:url("https://cdn.jsdelivr.net/gh/max32002/nanifont@1.046/webfont/NaniFont-Light.woff2") format("woff2"),url("https://cdn.jsdelivr.net/gh/max32002/nanifont@1.046/webfont/NaniFont-Light.woff") format("woff");font-weight:300;font-style:normal;font-display:swap}
+@font-face{font-family:"NaniFont";src:url("https://cdn.jsdelivr.net/gh/max32002/nanifont@1.046/webfont/NaniFont-Light.woff2") format("woff2"),url("https://cdn.jsdelivr.net/gh/max32002/nanifont@1.046/webfont/NaniFont-Light.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
+:root{--bg:#eef3f8;--bg2:#dfe8f1;--card:rgba(255,255,255,.72);--ink:#1d2b3a;--mute:#5d7185;--line:rgba(60,90,120,.18);--acc:#3d6f9e;--acc2:#a8c4de;--hero1:#16283d;--hero2:#4a7298;--jp:"KTEGAKI","NaniFont","Noto Serif TC","Songti TC","PingFang TC","Microsoft JhengHei",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1824;--bg2:#142234;--card:rgba(24,40,58,.7);--ink:#e8f0f8;--mute:#91a8be;--line:rgba(160,195,225,.16);--acc:#8ebbe3;--acc2:#37597c;--hero1:#0a121c;--hero2:#254666}}
 :root[data-theme="dark"]{--bg:#0e1824;--bg2:#142234;--card:rgba(24,40,58,.7);--ink:#e8f0f8;--mute:#91a8be;--line:rgba(160,195,225,.16);--acc:#8ebbe3;--acc2:#37597c;--hero1:#0a121c;--hero2:#254666}
 html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
