@@ -232,23 +232,63 @@ label{font-size:11px;margin-bottom:6px}
 <section class="sec noh" id="s-ootd"><h2>每日穿搭 OOTD</h2><div id="ootd"></div></section>
 <section class="sec noh" id="s-jnl"><h2>旅途手記</h2><div id="jnl"></div></section>
 </main>
-<footer>— 行程持續更新中 —</footer>
+<footer>— 行程持續更新中 —<div id="sync" style="margin-top:8px;opacity:.75;letter-spacing:.08em"></div></footer>
 
 <script>
 
 const DBKEY='fuyu-monogatari-v1';
+const GH_OWNER='hanna921202',GH_REPO='fuyu-monogatari-2026',GH_PATH='data/store.json';
+/* 共用編輯權杖：僅限此 repo Contents 讀寫。有連結的人都能改資料（刻意如此）。 */
+const GH_TOKEN='';
 const listeners={};
-function loadStore(){try{return JSON.parse(localStorage.getItem(DBKEY))||{}}catch(e){return {}}}
-let STORE=loadStore();
+let STORE={},storeSha=null,pushTimer=null,pullBusy=false,lastRemote='',syncStatus='';
+function loadLocal(){try{return JSON.parse(localStorage.getItem(DBKEY))||{}}catch(e){return {}}}
+function saveLocal(){try{localStorage.setItem(DBKEY,JSON.stringify(STORE))}catch(e){}}
 function emit(name){const cols=STORE[name]||{};const sn={docs:Object.keys(cols).map(id=>({id,data:()=>cols[id]}))};(listeners[name]||[]).forEach(fn=>{try{fn(sn)}catch(e){}})}
-const localDb={collection(name){return {doc(id){return {async set(data){STORE[name]=STORE[name]||{};STORE[name][id]=JSON.parse(JSON.stringify(data));localStorage.setItem(DBKEY,JSON.stringify(STORE));emit(name)}}},onSnapshot(cb){(listeners[name]=listeners[name]||[]).push(cb);emit(name);return ()=>{}}}}};
+function emitAll(){Object.keys(listeners).forEach(emit);try{if(typeof applyStore==='function'){applyStore();if(typeof renderTrip==='function')renderTrip();if(typeof renderTabs==='function')renderTabs();if(typeof renderView==='function'&&!edit)renderView()}}catch(e){}}
+function setSync(msg){syncStatus=msg;const el=document.getElementById('sync');if(el)el.textContent=msg}
+function b64encode(str){return btoa(unescape(encodeURIComponent(str)))}
+function b64decode(str){return decodeURIComponent(escape(atob(str)))}
+async function remotePull(){if(pullBusy)return;pullBusy=true;try{
+  const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
+  const headers={'Accept':'application/vnd.github+json'};
+  if(GH_TOKEN)headers.Authorization='Bearer '+GH_TOKEN;
+  const r=await fetch(api+'?t='+Date.now(),{headers,cache:'no-store'});
+  if(!r.ok)throw new Error('pull '+r.status);
+  const j=await r.json();storeSha=j.sha;
+  const raw=b64decode(String(j.content||'').replace(/\n/g,''));
+  if(raw===lastRemote)return;
+  lastRemote=raw;STORE=JSON.parse(raw||'{}');saveLocal();
+  if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]});
+  setSync('已同步 · '+new Date().toLocaleTimeString());emitAll();
+ }catch(e){if(!Object.keys(STORE).length){STORE=loadLocal();emitAll()}setSync('離線／讀取失敗，使用本機快取')}
+ finally{pullBusy=false}}
+async function remotePush(){if(!GH_TOKEN){setSync('尚未設定共用權杖，僅存本機');saveLocal();return}
+ try{setSync('儲存中…');
+  STORE.meta=Object.assign({},STORE.meta||{},{updatedAt:new Date().toISOString()});
+  const body=JSON.stringify(STORE);lastRemote=body;saveLocal();
+  const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
+  const headers={'Accept':'application/vnd.github+json','Authorization':'Bearer '+GH_TOKEN,'Content-Type':'application/json'};
+  if(!storeSha){const g=await fetch(api,{headers,cache:'no-store'});if(g.ok)storeSha=(await g.json()).sha}
+  const r=await fetch(api,{method:'PUT',headers,body:JSON.stringify({message:'sync trip '+new Date().toISOString(),content:b64encode(body),sha:storeSha||undefined})});
+  if(r.status===409){await remotePull();return remotePush()}
+  if(!r.ok)throw new Error('push '+r.status+' '+await r.text());
+  const j=await r.json();storeSha=j.content&&j.content.sha;setSync('已儲存到雲端 · '+new Date().toLocaleTimeString());
+ }catch(e){setSync('儲存失敗：'+e.message);throw e}}
+function queuePush(){clearTimeout(pushTimer);pushTimer=setTimeout(()=>{remotePush().catch(()=>{})},450)}
+const localDb={collection(name){return {doc(id){return {async set(data){STORE[name]=STORE[name]||{};STORE[name][id]=JSON.parse(JSON.stringify(data));saveLocal();emit(name);queuePush()}}},onSnapshot(cb){(listeners[name]=listeners[name]||[]).push(cb);emit(name);return ()=>{}}}}};
 const blobMap={};
-function blobSrc(id){if(!id)return '';if(blobMap[id])return blobMap[id];if(/[\/.]/.test(id))return id;return ''}
+function blobSrc(id){if(!id)return '';if(blobMap[id])return blobMap[id];if(STORE.blobs&&STORE.blobs[id])return STORE.blobs[id];if(/[\/.]/.test(id)||String(id).startsWith('data:'))return id;return ''}
 function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('fuyu-blobs',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('blobs'))r.result.createObjectStore('blobs')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 async function idbPut(id,blob){const d=await idbOpen();return new Promise((res,rej)=>{const tx=d.transaction('blobs','readwrite');tx.objectStore('blobs').put(blob,id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
-async function hydrateBlobs(){try{const d=await idbOpen();await new Promise((res,rej)=>{const tx=d.transaction('blobs','readonly');const req=tx.objectStore('blobs').openCursor();req.onsuccess=()=>{const c=req.result;if(c){blobMap[c.key]=URL.createObjectURL(c.value);c.continue()}else res()};req.onerror=()=>rej(req.error)})}catch(e){}}
-async function uploadBlob(file){const id=(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).replace(/-/g,'');await idbPut(id,file);blobMap[id]=URL.createObjectURL(file);return {id}}
+async function hydrateBlobs(){try{const d=await idbOpen();await new Promise((res,rej)=>{const tx=d.transaction('blobs','readonly');const req=tx.objectStore('blobs').openCursor();req.onsuccess=()=>{const c=req.result;if(c){blobMap[c.key]=URL.createObjectURL(c.value);c.continue()}else res()};req.onerror=()=>rej(req.error)})}catch(e){}
+ if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]})}
+function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+async function uploadBlob(file){const id=(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).replace(/-/g,'');
+ const dataUrl=await fileToDataUrl(file);STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;blobMap[id]=dataUrl;
+ try{await idbPut(id,file)}catch(e){}saveLocal();queuePush();return {id}}
 const claude={async use(kind){if(kind==='user')return {canEdit(){return true}};if(kind==='db')return localDb;if(kind==='assets')return {upload:uploadBlob};return null}};
+setInterval(()=>{if(!document.hidden)remotePull().catch(()=>{})},8000);
 // 預設行程；後台儲存後會以資料庫內容覆蓋
 const BASE=[{"d":"11/26","w":"四","c":"札幌","title":"抵達北海道・札幌初雪","items":[{"m":"抵達後前往札幌市區","n":"桃園國際機場 → 新千歲機場","t":"06:00","img":"images/DAY1-01.jpg"},{"m":"海鮮丼、北海道早市氣氛","n":"二條市場","t":"08:00","img":"images/DAY1-02.jpg"},{"m":"有頂棚的商店街，下雪也能逛","n":"狸小路商店街","t":"10:30","img":"images/DAY1-03.jpg"},{"m":"散步路線：從地下鐵「中島公園站」出來→漫步雪景菖蒲池→參觀百年藍白色木造洋館「豐平館」拍照 →日本庭園","n":"中島公園","t":"13:30","img":"images/DAY1-04.jpg"},{"m":"順路看 札幌白色燈樹節 與 慕尼黑聖誕市集 點燈","n":"大通公園","t":"16:00","img":"images/DAY1-05.jpg"},{"m":"札幌最熱鬧的夜晚街區","n":"薄野","t":"18:00","img":"images/DAY1-06.jpg"}]},{"d":"11/27","w":"五","c":"北海道","title":"北海道","items":[{"m":"","n":"札幌→旭川","t":"7:30","img":"images/DAY2-01.jpg"},{"m":"","n":"旭山動物園","t":"10:00","img":"images/DAY2-02.jpg"},{"m":"","n":"美瑛 & 四季彩之丘","t":"13:15","img":"images/DAY2-03.jpg"},{"m":"","n":"富良野 森林精靈露臺","t":"15:30","img":"images/DAY2-04.jpg"},{"m":"","n":"返回札幌市區","t":"17:00","img":"images/DAY2-05.jpg"}]},{"d":"11/28","w":"六","c":"北海道","title":"北海道","items":[{"m":"","n":"北海道神宮","t":"08:00","img":"images/DAY3-01.jpg"},{"m":"","n":"定山溪神社 & 溫泉日歸泡湯","t":"09:40","img":"images/DAY3-02.jpg"},{"m":"搭乘定山溪直達小樽巴士，或經札幌轉乘 JR","n":"前往小樽","t":"13:30"},{"m":"","n":"小樽運河  ","t":"14:40","img":"images/DAY3-04.jpg"},{"m":"","n":"堺町通","t":"15:00","img":"images/DAY3-05.jpg"},{"m":"在「小樽站前公車總站」3 號月台搭乘 中央巴士 9 號線（天狗山線），約 20 分鐘即可直達「天狗山纜車山腳站」","n":"前往山腳站","t":"16:00"},{"m":"","n":"購票與搭乘纜車","t":"16:20"},{"m":"山頂有 5 個不同角度的展望台（包含重現《First Love 初戀》場景的地點）、天狗山神社、天狗館以及小景觀餐廳/咖啡廳","n":"山頂展望台賞夜景","t":"16:30","img":"images/DAY3-08.jpg"},{"m":"搭纜車下山，於山腳站搭乘公車返回小樽站前或小樽運河區享用晚餐","n":"搭纜車下山與返程","t":"17:30"},{"m":"","n":"返回札幌","t":"19:00"}]},{"d":"11/29","w":"日","c":"移動日","title":"北海道 → 東京","items":[{"m":"抵達東京，入住飯店","n":"新千歲機場 → 羽田機場","t":""},{"m":"","n":"莆田","t":""}]},{"d":"11/30","w":"一","c":"東京","title":"東京","items":[{"m":"","n":"原宿","t":"10:30","img":"images/DAY5-01.jpg"},{"m":"5 Chome-17-3 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"花園神社","t":"14:00","img":"images/DAY5-02.jpg"},{"m":"ピカデリー Ｂ１, ２Ｆ, 3 Chome-15-15 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"無印良品 新宿靖國通","t":"17:00","img":"images/DAY5-03.jpg"},{"m":"","n":"新宿","t":"19:00","img":"images/DAY5-04.jpg"}]},{"d":"12/01","w":"二","c":"東京","title":"東京（待安排）","items":[{"m":"候選","n":"淺草寺","t":"","img":"images/DAY6-01.jpg"},{"m":"候選","n":"秋葉原","t":"","img":"images/DAY6-02.jpg"}]},{"d":"12/02","w":"三","c":"東京","title":"東京海洋迪士尼","items":[{"m":"整天","n":"東京迪士尼","t":"","img":"images/DAY7-01.jpg"}]},{"d":"12/03","w":"四","c":"川越","title":"小江戶川越","items":[{"m":"","n":"川越一番街商店街","t":"","img":"images/DAY8-01.jpg"},{"m":"江戶風情的黑瓦老街","n":"藏造老屋街道","t":"","img":"images/DAY8-02.jpg"}]},{"d":"12/04","w":"五","c":"成田","title":"成田・返程","items":[{"m":"餐廳","n":"早餐","t":"9:00"},{"m":"購物","n":"酒酒井 Outlet","t":"10:30","img":"images/DAY9-02.jpg"},{"m":"","n":"成田山新勝寺","t":"","img":"images/DAY9-03.jpg"},{"m":"返台","n":"成田機場 → 桃園國際機場","t":"","img":"images/DAY9-04.jpg"}]}];
 let DAYS=JSON.parse(JSON.stringify(BASE)),cur=0,edit=false,db=localDb,canEdit=true,draft=null;
@@ -288,8 +328,9 @@ box.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;c
    DAYS[cur]={...DAYS[cur],...draft};edit=false;draft=null;show(cur)}
   catch(err){m.textContent='儲存失敗，請確認有編輯權限'}}});
 show(0);
-(async()=>{try{await hydrateBlobs();const [u,d]=await Promise.all([claude.use('user'),claude.use('db')]);
- db=d;canEdit=true;if(d)watchTrip();if(d&&canEdit)watchLedger();renderTrip();
+(async()=>{try{await remotePull();await hydrateBlobs();const [u,d]=await Promise.all([claude.use('user'),claude.use('db')]);
+ db=d;canEdit=true;if(d)watchTrip();if(d&&canEdit)watchLedger();applyStore();renderTrip();
+ if(!GH_TOKEN)setSync('讀取雲端中 · 寫入需設定共用權杖');
  if(d){d.collection('days').onSnapshot(sn=>{sn.docs.forEach(doc=>{const k=+doc.id.slice(1),v=doc.data();
    if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
    renderTabs();if(!edit)renderView()},()=>{})}
