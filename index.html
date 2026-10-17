@@ -119,7 +119,8 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 :root[data-theme="dark"] #jukebox button{background:rgba(20,40,60,.35)}
 #drawer{position:fixed;inset:0;z-index:40;pointer-events:none}
 #drawer .ov{position:absolute;inset:0;background:rgba(10,20,35,.45);opacity:0;transition:opacity .25s}
-#drawer .pn{position:absolute;top:0;bottom:0;left:0;width:min(78vw,300px);background:var(--bg);border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 72px) 18px 24px;transform:translateX(-102%);transition:transform .28s;overflow-y:auto}
+#drawer .pn{position:absolute;top:0;bottom:0;left:0;width:min(78vw,300px);background:var(--bg);border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 72px) 18px 24px;transform:translateX(-102%);transition:transform .28s;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none}
+#drawer .pn::-webkit-scrollbar{display:none;width:0;height:0}
 #drawer.open{pointer-events:auto}#drawer.open .ov{opacity:1}#drawer.open .pn{transform:none}
 .dt{font-family:"Cormorant Garamond",var(--jp);letter-spacing:.18em;color:var(--mute);margin-bottom:14px}
 .dl button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;font-size:16px;letter-spacing:.12em;padding:12px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
