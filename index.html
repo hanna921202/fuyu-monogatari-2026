@@ -240,7 +240,7 @@ label{font-size:11px;margin-bottom:6px}
 </main>
 <footer>— 行程持續更新中 —</footer>
 <div id="syncbar"><div class="tx" id="sync">同步中…</div><button class="btn s" type="button" id="syncBtn">啟用雲端儲存</button></div>
-<div id="tokbox"><div class="panel"><h3>啟用雙機雲端同步</h3><p>iPhone 與 ROG 都要各啟用一次。若舊權杖失效，請到 GitHub 重建「只限此專案 Contents 讀寫」的 Fine-grained token，兩支手機貼同一個權杖。</p><label>編輯權杖<input id="tokIn" placeholder="貼上權杖…" autocomplete="off" spellcheck="false"></label><div class="bar"><button class="btn pri" type="button" id="tokSave">驗證並啟用</button><button class="btn" type="button" id="tokClose">取消</button></div></div></div>
+<div id="tokbox"><div class="panel"><h3>啟用雙機雲端同步</h3><p>請建立 Fine-grained token：只選 <b>fuyu-monogatari-2026</b>，Permissions → Contents 必須是 <b>Read and write</b>（不能只選 Read）。iPhone 與 ROG 貼同一個權杖。</p><label>編輯權杖<input id="tokIn" placeholder="貼上權杖…" autocomplete="off" spellcheck="false"></label><div id="tokErr" style="color:#c0504d;font-size:12px;margin:6px 0 0;min-height:1.2em"></div><div class="bar"><button class="btn pri" type="button" id="tokSave">驗證並啟用</button><button class="btn" type="button" id="tokClose">取消</button></div></div></div>
 
 <script>
 
@@ -270,19 +270,27 @@ function b64encode(str){return btoa(unescape(encodeURIComponent(str)))}
 function authHeaders(extra){const h=Object.assign({'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},extra||{});if(GH_TOKEN)h.Authorization='Bearer '+GH_TOKEN;return h}
 function openTok(){const box=document.getElementById('tokbox');if(!box)return;box.classList.add('on');const inp=document.getElementById('tokIn');if(inp){inp.value='';setTimeout(()=>inp.focus(),50)}}
 function closeTok(){document.getElementById('tokbox')?.classList.remove('on')}
-async function verifyToken(t){const r=await fetch(API_URL+'?t='+Date.now(),{headers:authHeaders({Authorization:'Bearer '+t}),cache:'no-store'});
+function setTokErr(msg){const el=document.getElementById('tokErr');if(el)el.textContent=msg||''}
+async function verifyToken(t){
+ const h=authHeaders({Authorization:'Bearer '+t,'Content-Type':'application/json'});
+ const r=await fetch(API_URL+'?t='+Date.now(),{headers:h,cache:'no-store'});
  if(r.status===401)throw new Error('權杖無效或已失效，請重新建立');
- if(r.status===403)throw new Error('權杖權限不足：請給 Contents Read and write');
+ if(r.status===403)throw new Error('無法讀取專案：請確認有選 fuyu-monogatari-2026');
  if(!r.ok)throw new Error('驗證失敗 HTTP '+r.status);
- const j=await r.json();return j.sha}
-async function applyToken(t){t=String(t||'').trim();if(!t)return false;
- try{setSync('驗證權杖中…');const sha=await verifyToken(t);GH_TOKEN=t;storeSha=sha;
+ const j=await r.json();
+ // 關鍵：只讀權杖 GET 會過、PUT 會 403。這裡直接測寫入。
+ const put=await fetch(API_URL,{method:'PUT',headers:h,body:JSON.stringify({message:'verify write '+Date.now(),content:j.content,sha:j.sha})});
+ if(put.status===401)throw new Error('權杖無效或已失效，請重新建立');
+ if(put.status===403)throw new Error('此權杖只有「讀取」：請改成 Contents → Read and write 後重建');
+ if(!put.ok){const tx=await put.text();throw new Error('寫入測試失敗 '+put.status+' '+(tx||'').slice(0,60))}
+ const out=await put.json();return (out.content&&out.content.sha)||j.sha}
+async function applyToken(t){t=String(t||'').trim();if(!t){setTokErr('請先貼上權杖');return false}
+ try{setTokErr('');setSync('驗證權杖（含寫入測試）…');
+  const sha=await verifyToken(t);GH_TOKEN=t;storeSha=sha;
   try{localStorage.setItem('fuyu-edit-token',t)}catch(e){}
-  setSync('權杖有效 · 正在寫入測試…',true);closeTok();
-  const ok=await remotePush();
-  if(ok)setSync('雙機同步已啟用 · 編輯會自動存雲端',true);
-  return !!ok;
- }catch(e){setSync(String(e.message||e),false);openTok();return false}}
+  closeTok();setSync('雙機同步已啟用 · 編輯會自動存雲端',true);
+  await remotePull(true);return true;
+ }catch(e){const msg=String(e.message||e);setTokErr(msg);setSync(msg,false);openTok();return false}}
 async function remotePull(force){if(pullBusy)return;if(!force&&Date.now()<skipPullUntil)return;if(!force&&isEditing())return;pullBusy=true;try{
   // 讀取走 raw，避免未登入 API 被限流 403；寫入 SHA 才用 API
   const r=await fetch(RAW_URL+'?t='+Date.now(),{cache:'no-store'});
