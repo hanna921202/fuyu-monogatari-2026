@@ -103,7 +103,7 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .shgrid .sp{flex:none}
 #mb{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:0}
 #mb span{display:block;width:20px;height:2px;background:var(--ink);border-radius:2px}
-#jukebox{position:fixed;z-index:51;top:calc(env(safe-area-inset-top,0px) + 12px);left:calc(12px + 52px);width:min(210px,calc(100vw - 76px));padding:8px 10px;border-radius:14px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -16px rgba(20,50,90,.4);display:flex;flex-direction:column;gap:6px;font-family:var(--jp)}
+#jukebox{position:fixed;z-index:51;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;left:auto;width:min(210px,calc(100vw - 76px));padding:8px 10px;border-radius:14px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -16px rgba(20,50,90,.4);display:flex;flex-direction:column;gap:6px;font-family:var(--jp)}
 #jukebox .jb-row{display:flex;align-items:center;gap:8px}
 #jukebox .jb-meta{flex:1;min-width:0;line-height:1.25}
 #jukebox .jb-label{font-size:9px;letter-spacing:.18em;color:var(--mute);text-transform:uppercase}
@@ -216,7 +216,7 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .jb{margin-top:10px}.jh{font-size:15px}.jq{font-size:12px}.jl{font-size:11px}
 #mb{top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;width:36px;height:36px;border-radius:10px;gap:4px}
 #mb span{width:16px}
-#jukebox{top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(8px + 44px);width:min(180px,calc(100vw - 64px));padding:6px 8px;border-radius:12px}
+#jukebox{top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;left:auto;width:min(180px,calc(100vw - 64px));padding:6px 8px;border-radius:12px}
 #jukebox .jb-title{font-size:11px}#jukebox button{width:28px;height:28px;font-size:11px}
 #jukebox button svg{width:12px;height:12px}
 #jukebox #jb-next{border-color:rgba(120,150,180,.28);background:rgba(255,255,255,.22)}
