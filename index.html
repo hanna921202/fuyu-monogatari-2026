@@ -292,36 +292,54 @@ async function applyToken(t){t=String(t||'').trim();if(!t){setTokErr('請先貼�
   await remotePull(true);return true;
  }catch(e){const msg=String(e.message||e);setTokErr(msg);setSync(msg,false);openTok();return false}}
 async function remotePull(force){if(pullBusy)return;if(!force&&Date.now()<skipPullUntil)return;if(!force&&isEditing())return;pullBusy=true;try{
-  // 讀取走 raw，避免未登入 API 被限流 403；寫入 SHA 才用 API
-  const r=await fetch(RAW_URL+'?t='+Date.now(),{cache:'no-store'});
-  if(!r.ok)throw new Error('讀取雲端失敗 '+r.status);
-  const raw=await r.text();
-  if(GH_TOKEN){try{const m=await fetch(API_URL+'?t='+Date.now(),{headers:authHeaders(),cache:'no-store'});if(m.ok)storeSha=(await m.json()).sha}catch(e){}}
+  let raw='',sha=null;
+  // 有權杖：一律用 API（即時、無 CDN 快取）。無權杖才用 raw。
+  if(GH_TOKEN){
+    const m=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});
+    if(m.status===401||m.status===403)throw new Error(m.status===401?'權杖無效':'權杖權限不足');
+    if(!m.ok)throw new Error('讀取雲端失敗 '+m.status);
+    const j=await m.json();sha=j.sha;raw=b64decode(String(j.content||'').replace(/\n/g,''));
+  }else{
+    const r=await fetch(RAW_URL+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error('讀取雲端失敗 '+r.status);
+    raw=await r.text();
+  }
+  if(sha)storeSha=sha;
   if(raw===lastRemote){setSync(GH_TOKEN?'雲端已連線 · 可自動儲存':'已讀取雲端 · 請啟用寫入',!!GH_TOKEN);return}
+  // 若本機剛存過且較新，不要被舊快取蓋掉
+  try{const remote=JSON.parse(raw||'{}');const loc=STORE&&STORE.meta&&STORE.meta.updatedAt;const rem=remote.meta&&remote.meta.updatedAt;
+   if(loc&&rem&&loc>rem&&Object.keys(STORE).length){setSync('保留本機較新資料，稍後再同步',true);return}}catch(e){}
   lastRemote=raw;STORE=JSON.parse(raw||'{}');saveLocal();
   if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]});
-  setSync((GH_TOKEN?'已同步對方更新 · ':'已讀取雲端 · ')+new Date().toLocaleTimeString(),!!GH_TOKEN);emitAll();
+  setSync((GH_TOKEN?'已同步 · ':'已讀取雲端 · ')+new Date().toLocaleTimeString(),!!GH_TOKEN);emitAll();
  }catch(e){if(!Object.keys(STORE).length){STORE=loadLocal();emitAll()}setSync('讀取失敗：'+e.message,false)}
  finally{pullBusy=false}}
+let pushChain=Promise.resolve();
 async function remotePush(){if(!GH_TOKEN){setSync('尚未啟用雲端儲存（僅存本機）',false);saveLocal();return false}
- if(pushBusy)return false;pushBusy=true;
+ if(pushBusy){await new Promise(r=>{const t=setInterval(()=>{if(!pushBusy){clearInterval(t);r()}},40);setTimeout(()=>{clearInterval(t);r()},8000)});if(pushBusy)return false}
+ pushBusy=true;
  try{setSync('儲存到雲端中…');
-  // 避免圖片 dataURL 把檔案撑爆（GitHub Contents 實務上限較緊）
-  if(STORE.blobs){const keys=Object.keys(STORE.blobs);let n=0;for(const k of keys){if(String(STORE.blobs[k]).length>120000){delete STORE.blobs[k];n++}}if(n)console.warn('dropped large blobs',n)}
+  if(STORE.blobs){const keys=Object.keys(STORE.blobs);for(const k of keys){if(String(STORE.blobs[k]).length>120000)delete STORE.blobs[k]}}
   STORE.meta=Object.assign({},STORE.meta||{},{updatedAt:new Date().toISOString(),by:navigator.userAgent.includes('iPhone')?'iPhone':(navigator.userAgent.includes('Android')?'Android':'web')});
   const body=JSON.stringify(STORE);saveLocal();
-  if(!storeSha){const g=await fetch(API_URL,{headers:authHeaders(),cache:'no-store'});if(g.status===401||g.status===403)throw new Error(g.status===401?'權杖無效，請重新啟用':'權杖權限不足');if(g.ok)storeSha=(await g.json()).sha}
-  const r=await fetch(API_URL,{method:'PUT',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify({message:'sync '+new Date().toISOString(),content:b64encode(body),sha:storeSha||undefined})});
-  if(r.status===409){pushBusy=false;storeSha=null;await remotePull(true);return remotePush()}
+  // 每次寫入前刷新 sha，降低 409；衝突時只更新 sha，绝不把本機 STORE 清掉
+  const g=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});
+  if(g.status===401||g.status===403)throw new Error(g.status===401?'權杖無效，請重新啟用':'權杖權限不足');
+  if(g.ok)storeSha=(await g.json()).sha;
+  let r=await fetch(API_URL,{method:'PUT',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify({message:'sync '+new Date().toISOString(),content:b64encode(body),sha:storeSha||undefined})});
+  if(r.status===409){const g2=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});if(g2.ok)storeSha=(await g2.json()).sha;
+   r=await fetch(API_URL,{method:'PUT',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify({message:'sync retry '+new Date().toISOString(),content:b64encode(body),sha:storeSha||undefined})})}
   if(r.status===401||r.status===403)throw new Error(r.status===401?'權杖無效或已撤銷，請重建權杖':'權限不足：Contents 需 Read and write');
   if(!r.ok){const t=await r.text();throw new Error('寫入失敗 '+r.status+' '+(t||'').slice(0,80))}
-  const j=await r.json();storeSha=j.content&&j.content.sha;lastRemote=body;skipPullUntil=Date.now()+2500;
+  const j=await r.json();storeSha=j.content&&j.content.sha;lastRemote=body;skipPullUntil=Date.now()+5000;
+  // 立刻用 API 回讀確認，避免重整時讀到舊 CDN
+  try{const chk=await fetch(API_URL+'?ref=main&t='+Date.now(),{headers:authHeaders(),cache:'no-store'});if(chk.ok){const cj=await chk.json();storeSha=cj.sha;const got=b64decode(String(cj.content||'').replace(/\n/g,''));if(got)lastRemote=got}}catch(e){}
   setSync('已同步到雲端 · '+new Date().toLocaleTimeString(),true);return true;
  }catch(e){setSync('儲存失敗：'+e.message,false);if(/權杖|權限|401|403/.test(String(e.message))){GH_TOKEN='';try{localStorage.removeItem('fuyu-edit-token')}catch(x){}setTimeout(openTok,400)}throw e}
  finally{pushBusy=false}}
-function queuePush(){clearTimeout(pushTimer);pushTimer=setTimeout(()=>{remotePush().catch(()=>{})},700)}
-async function flushPush(){clearTimeout(pushTimer);return remotePush()}
-const localDb={collection(name){return {doc(id){return {async set(data){STORE[name]=STORE[name]||{};STORE[name][id]=JSON.parse(JSON.stringify(data));saveLocal();emit(name);await flushPush()}}},onSnapshot(cb){(listeners[name]=listeners[name]||[]).push(cb);emit(name);return ()=>{}}}}};
+function queuePush(){clearTimeout(pushTimer);pushTimer=setTimeout(()=>{flushPush().catch(()=>{})},700)}
+function flushPush(){clearTimeout(pushTimer);pushChain=pushChain.then(()=>remotePush(),()=>remotePush());return pushChain}
+const localDb={collection(name){return {doc(id){return {async set(data){STORE[name]=STORE[name]||{};STORE[name][id]=JSON.parse(JSON.stringify(data));saveLocal();emit(name);const ok=await flushPush();if(!ok)throw new Error('雲端儲存失敗')}}},onSnapshot(cb){(listeners[name]=listeners[name]||[]).push(cb);emit(name);return ()=>{}}}}};
 const blobMap={};
 function blobSrc(id){if(!id)return '';if(blobMap[id])return blobMap[id];if(STORE.blobs&&STORE.blobs[id])return STORE.blobs[id];if(/[\/.]/.test(id)||String(id).startsWith('data:'))return id;return ''}
 function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('fuyu-blobs',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('blobs'))r.result.createObjectStore('blobs')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
@@ -364,12 +382,13 @@ function renderEdit(){const x=draft;
  <div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="msg"></span></div>`}
 function show(i){cur=i;renderTabs();edit?renderEdit():renderView()}
 let daySaveTimer=null;
-async function saveDayDraft(showDone){if(!edit||!draft)return;const m=document.getElementById('msg');if(m)m.textContent='自動儲存中…';
+async function saveDayDraft(showDone){if(!edit||!draft)return;const m=document.getElementById('msg');if(m)m.textContent='儲存到雲端中…';
  try{const items=draft.items.filter(o=>o.n.trim()||o.m.trim()||o.img);
   await db.collection('days').doc('d'+cur).set({title:draft.title,c:draft.c,items});
   DAYS[cur]={...DAYS[cur],title:draft.title,c:draft.c,items:JSON.parse(JSON.stringify(items))};
-  if(showDone){edit=false;draft=null;show(cur)}else if(m)m.textContent='已自動儲存'}
- catch(err){if(m)m.textContent='儲存失敗：請先啟用雲端儲存';if(!GH_TOKEN)openTok()}}
+  if(showDone){edit=false;draft=null;show(cur);setSync('行程已存上雲端',true)}
+  else if(m)m.textContent='已存上雲端'}
+ catch(err){if(m)m.textContent='儲存失敗：'+(err&&err.message||'請啟用雲端儲存');setSync('儲存失敗',false);if(!GH_TOKEN)openTok()}}
 box.addEventListener('input',e=>{if(!edit)return;const f=e.target.dataset.f,it=e.target.closest('.item');
  if(!f)return;if(it)draft.items[+it.dataset.i][f]=e.target.value;else draft[f]=e.target.value;
  clearTimeout(daySaveTimer);daySaveTimer=setTimeout(()=>saveDayDraft(false),1200)});
