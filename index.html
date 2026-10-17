@@ -249,7 +249,9 @@ const FB_URL='https://fuyu-monogatari-2026-default-rtdb.firebaseio.com/store.jso
 const listeners={};
 let STORE={},pushTimer=null,pullBusy=false,pushBusy=false,lastRemote='',syncStatus='',skipPullUntil=0,saveGen=0,booted=false;
 function loadLocal(){try{const x=JSON.parse(localStorage.getItem(DBKEY));return x&&typeof x==='object'?x:{}}catch(e){return {}}}
-function saveLocal(){try{localStorage.setItem(DBKEY,JSON.stringify(STORE))}catch(e){}}
+function saveLocal(){try{localStorage.setItem(DBKEY,JSON.stringify(STORE));return true}catch(e){
+ try{const slim=JSON.parse(JSON.stringify(STORE));if(slim.blobs){Object.keys(slim.blobs).forEach(k=>{if(String(slim.blobs[k]).length>8000)delete slim.blobs[k]});if(!Object.keys(slim.blobs).length)delete slim.blobs}
+  localStorage.setItem(DBKEY,JSON.stringify(slim));return true}catch(e2){return false}}}
 function storeStamp(s){return (s&&s.meta&&s.meta.updatedAt)||''}
 function storeReady(s){return !!(s&&typeof s==='object'&&(s.trip||s.days||s.ledger||s.blobs||s.meta))}
 function emit(name){const cols=STORE[name]||{};const sn={docs:Object.keys(cols).map(id=>({id,data:()=>cols[id]}))};(listeners[name]||[]).forEach(fn=>{try{fn(sn)}catch(e){}})}
@@ -358,14 +360,6 @@ box.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;c
  if(a==='down'&&i<draft.items.length-1){[draft.items[i+1],draft.items[i]]=[draft.items[i],draft.items[i+1]];return renderEdit()}
  if(a==='save'){clearTimeout(daySaveTimer);await saveDayDraft(true)}});
 show(0);
-(async()=>{try{if(storeReady(STORE))applyStore();
- await remotePull(true);booted=true;await hydrateBlobs();const [u,d]=await Promise.all([claude.use('user'),claude.use('db')]);
- db=d;canEdit=true;if(d)watchTrip();if(d&&canEdit)watchLedger();applyStore();renderTrip();
- setSync('雲端已連線 · 編輯會自動儲存',true);
- if(d){d.collection('days').onSnapshot(sn=>{sn.docs.forEach(doc=>{const k=+doc.id.slice(1),v=doc.data();
-   if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
-   renderTabs();if(!edit)renderView()},()=>{})}
- if(!edit)renderView()}catch(e){booted=true}})();
 // 下雪
 (()=>{const c=document.getElementById('snow'),g=c.getContext('2d');let W,H,f=[];
 const rs=()=>{W=c.width=c.offsetWidth;H=c.height=c.offsetHeight};rs();addEventListener('resize',rs);
@@ -422,9 +416,10 @@ wsBox.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return
   const out={};['hk','tk'].forEach(r=>out[r]=dW[r].map(g=>({d:g.d.trim(),items:g.items.map(x=>x.trim()).filter(Boolean)})).filter(g=>g.d||g.items.length));
   try{await db.collection('trip').doc('wishes').set(out);WS=out;eW=false;dW=null}catch(err){m.textContent='儲存失敗，請確認有編輯權限';return}}
  renderWish()});
+function asList(v){if(Array.isArray(v))return v;if(v&&typeof v==='object')return Object.keys(v).sort((a,b)=>a-b).map(k=>v[k]).filter(x=>x&&typeof x==='object');return[]}
 function watchTrip(){db.collection('trip').onSnapshot(sn=>{sn.docs.forEach(doc=>{const v=doc.data()||{};
- if(doc.id==='flights'&&v.list&&!eF)FL=cl(v.list);
- if(doc.id==='wishes'&&!eW)WS=cl({hk:v.hk||[],tk:v.tk||[]});if(doc.id==='shopping'&&v.list&&!eS)SH=cl(v.list);if(doc.id==='packing'&&v.groups&&!eP)PK=cl(v.groups);if(doc.id==='currency'&&v.list&&!eC)CR=cl(v.list);if(doc.id==='stays'&&v.list)STAY.set(v.list);if(doc.id==='ootd'&&v.list)OOTD.set(v.list);if(doc.id==='journal'&&v.list)JNL.set(v.list)});renderTrip()},()=>{})}
+ if(doc.id==='flights'&&v.list!=null&&!eF)FL=cl(asList(v.list));
+ if(doc.id==='wishes'&&!eW)WS=cl({hk:v.hk||[],tk:v.tk||[]});if(doc.id==='shopping'&&v.list!=null&&!eS)SH=cl(asList(v.list));if(doc.id==='packing'&&v.groups&&!eP)PK=cl(v.groups);if(doc.id==='currency'&&v.list!=null&&!eC)CR=cl(asList(v.list));if(doc.id==='stays'&&v.list!=null)STAY.set(asList(v.list));if(doc.id==='ootd'&&v.list!=null)OOTD.set(asList(v.list));if(doc.id==='journal'&&v.list!=null)JNL.set(asList(v.list))});renderTrip()},()=>{})}
 let SH=[],eS=false,dS=null;const CATS=['美食','美妝','電玩','其他'],catOf=x=>CATS.includes(x.cat)?x.cat:'其他';
 const shBox=document.getElementById('shop'),IMG=id=>blobSrc(id);
 function renderShop(){
@@ -604,7 +599,18 @@ lb.onclick=()=>lb.classList.remove('on');
 document.addEventListener('click',e=>{const t=e.target;if(t.classList&&t.classList.contains('ti')){lb.firstChild.src=t.src;lb.classList.add('on')}});
 
 function keepImgs(k,items){const base=(BASE[k]&&BASE[k].items)||[];return (items||[]).map(it=>{if(it.img||Object.prototype.hasOwnProperty.call(it,'img'))return it;const hit=base.find(b=>b.img&&String(b.n).trim()===String(it.n||'').trim());return hit?{...it,img:hit.img}:it})}
-function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>{const k=+id.slice(1),v=daysS[id];if(DAYS[k]&&v)DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});const t=STORE.trip||{};if(t.flights&&t.flights.list)FL=cl(t.flights.list);if(t.wishes)WS=cl({hk:t.wishes.hk||[],tk:t.wishes.tk||[]});if(t.shopping&&t.shopping.list)SH=cl(t.shopping.list);if(t.packing&&t.packing.groups)PK=cl(t.packing.groups);if(t.currency&&t.currency.list)CR=cl(t.currency.list);if(t.stays&&t.stays.list)STAY.set(t.stays.list);if(t.ootd&&t.ootd.list)OOTD.set(t.ootd.list);if(t.journal&&t.journal.list)JNL.set(t.journal.list);const led=STORE.ledger&&STORE.ledger.main;if(led)LG={budget:led.budget||0,list:cl(led.list||[])}}
+function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>{const k=+id.slice(1),v=daysS[id];if(DAYS[k]&&v)DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});const t=STORE.trip||{};if(t.flights&&t.flights.list!=null)FL=cl(asList(t.flights.list));if(t.wishes)WS=cl({hk:t.wishes.hk||[],tk:t.wishes.tk||[]});if(t.shopping&&t.shopping.list!=null)SH=cl(asList(t.shopping.list));if(t.packing&&t.packing.groups)PK=cl(t.packing.groups);if(t.currency&&t.currency.list!=null)CR=cl(asList(t.currency.list));if(t.stays&&t.stays.list!=null)STAY.set(asList(t.stays.list));if(t.ootd&&t.ootd.list!=null)OOTD.set(asList(t.ootd.list));if(t.journal&&t.journal.list!=null)JNL.set(asList(t.journal.list));const led=STORE.ledger&&STORE.ledger.main;if(led)LG={budget:led.budget||0,list:cl(asList(led.list||[]))}}
+/* 必須放在 FL/SH/STAY 等宣告之後，否則 applyStore 會丟錯並跳過雲端同步（購物清單最容易因此重整後消失） */
+(async()=>{try{
+ if(storeReady(STORE))applyStore();
+ await remotePull(true);booted=true;await hydrateBlobs();
+ const [u,d]=await Promise.all([claude.use('user'),claude.use('db')]);
+ db=d;canEdit=true;if(d)watchTrip();if(d&&canEdit)watchLedger();applyStore();renderTrip();
+ setSync('雲端已連線 · 編輯會自動儲存',true);
+ if(d){d.collection('days').onSnapshot(sn=>{sn.docs.forEach(doc=>{const k=+doc.id.slice(1),v=doc.data();
+   if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
+   renderTabs();if(!edit)renderView()},()=>{})}
+ if(!edit)renderView()}catch(e){booted=true;try{await remotePull(true);applyStore();renderTrip()}catch(e2){setSync('啟動同步失敗',false)}}})();
 applyStore();if(!edit)renderView();
 renderTrip();
 </script>
