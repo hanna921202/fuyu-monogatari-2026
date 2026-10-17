@@ -85,7 +85,8 @@ textarea{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);b
 .pg{margin-bottom:16px}.pit{margin:8px 0 0;padding:8px 10px}
 .ch{margin:20px 0 8px;color:var(--acc);letter-spacing:.15em}.ch small{color:var(--mute);letter-spacing:0}
 select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-top:2px}
-.srow{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.srow{display:flex;gap:12px;overflow-x:auto;padding:2px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.srow::-webkit-scrollbar{display:none;width:0;height:0}
 .srow .sp{flex:0 0 min(68vw,220px);scroll-snap-align:start}
 .shcat{margin:0 0 22px}.shcat .chd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
 .shcat .chd h4{margin:0;color:var(--acc);letter-spacing:.15em;font-size:16px}
