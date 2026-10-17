@@ -391,6 +391,7 @@ const BASE=[{"d":"11/26","w":"四","c":"札幌","title":"抵達北海道・札�
 let DAYS=JSON.parse(JSON.stringify(BASE)),cur=0,edit=false,db=localDb,canEdit=true,draft=null;
 const tabs=document.getElementById('tabs'),box=document.getElementById('day'),fab=document.getElementById('fab');
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SNOW_ICO=`<svg class="ico-snow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><path d="M12 2.5v19M4.5 7l15 10M4.5 17l15-10"/><path d="M12 5.2l1.4-1.8M12 5.2 10.6 3.4M12 18.8l1.4 1.8M12 18.8l-1.4 1.8M6.4 8.1l-1.8-.4M6.4 8.1l.2-1.9M17.6 15.9l1.8.4M17.6 15.9l-.2 1.9M6.4 15.9l-1.8.4M6.4 15.9l.2 1.9M17.6 8.1l1.8-.4M17.6 8.1l-.2-1.9"/></g></svg>`;
 function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.createElement('button');b.className='tab';b.role='tab';
  b.setAttribute('aria-selected',i===cur);
  b.innerHTML=`<span class="c">DAY ${i+1}</span><b>${esc(x.d)}</b><span class="c">${esc(x.c)}</span>`;
@@ -692,7 +693,6 @@ acBox.addEventListener('change',async e=>{if(e.target.id==='ab'){const old=LG.bu
 function watchLedger(){db.collection('ledger').onSnapshot(sn=>{sn.docs.forEach(doc=>{if(doc.id==='main'){const v=doc.data()||{};LG={budget:v.budget||0,list:cl(v.list||[])}}});renderAcct()},()=>{})}
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','想去清單'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-acct','記帳']];
 const dr=document.getElementById('drawer'),mb=document.getElementById('mb');
-const SNOW_ICO=`<svg class="ico-snow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><path d="M12 2.5v19M4.5 7l15 10M4.5 17l15-10"/><path d="M12 5.2l1.4-1.8M12 5.2 10.6 3.4M12 18.8l1.4 1.8M12 18.8l-1.4 1.8M6.4 8.1l-1.8-.4M6.4 8.1l.2-1.9M17.6 15.9l1.8.4M17.6 15.9l-.2 1.9M6.4 15.9l-1.8.4M6.4 15.9l.2 1.9M17.6 8.1l1.8-.4M17.6 8.1l-.2-1.9"/></g></svg>`;
 let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">${SNOW_ICO}<span>${t}</span></button>`).join('')}buildMenu();
 function validSec(id){return SECS.some(([s])=>s===id&&(s!=='s-acct'||canEdit))}
 function openSec(id,jump){
