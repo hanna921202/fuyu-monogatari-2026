@@ -260,6 +260,22 @@ function isEditing(){return !!(edit||(typeof eF!=='undefined'&&eF)||(typeof eW!=
 function setSync(msg,ok){syncStatus=msg;const el=document.getElementById('sync');if(el){el.textContent=msg;el.className='tx '+(ok===false?'bad':ok?'ok':'')}}
 function deviceTag(){return navigator.userAgent.includes('iPhone')?'iPhone':(navigator.userAgent.includes('Android')?'Android':'web')}
 function adoptStore(next,raw){STORE=next&&typeof next==='object'?next:{};if(raw!=null)lastRemote=raw;else lastRemote=JSON.stringify(STORE);saveLocal();if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]});emitAll()}
+/* prefer 為主，other 只補 prefer 缺少的欄位（避免不完整本機把購物清單洗掉） */
+function mergeStore(prefer,other){
+ const out=JSON.parse(JSON.stringify(prefer&&typeof prefer==='object'?prefer:{}));
+ if(!other||typeof other!=='object')return out;
+ Object.keys(other).forEach(k=>{
+  if(k==='meta')return;
+  if(out[k]==null){out[k]=other[k];return}
+  if(k==='trip'||k==='days'||k==='ledger'||k==='blobs'){
+   out[k]=out[k]||{};
+   Object.keys(other[k]||{}).forEach(sk=>{if(out[k][sk]==null)out[k][sk]=other[k][sk]});
+  }
+ });
+ const a=storeStamp(prefer),b=storeStamp(other);
+ out.meta=Object.assign({},other.meta||{},prefer.meta||{},{updatedAt:(a>=b?a:b)||new Date().toISOString()});
+ return out;
+}
 async function remotePull(force){
  if(pullBusy||pushBusy)return;if(!force&&Date.now()<skipPullUntil)return;if(!force&&isEditing())return;
  const gen=saveGen;pullBusy=true;try{
@@ -273,8 +289,11 @@ async function remotePull(force){
   let remote;try{remote=JSON.parse(raw||'{}')}catch(e){throw new Error('雲端資料格式錯誤')}
   if(!remote||typeof remote!=='object')remote={};
   const loc=storeStamp(STORE),rem=storeStamp(remote);
-  if(storeReady(STORE)&&loc&&rem&&loc>rem){setSync('本機較新，上傳中…',true);await remotePush();return}
-  adoptStore(remote,raw);
+  if(storeReady(STORE)&&loc&&rem&&loc>rem){
+   STORE=mergeStore(STORE,remote);saveLocal();
+   setSync('本機較新，合併上傳中…',true);await remotePush();return}
+  if(storeReady(STORE))adoptStore(mergeStore(remote,STORE),null);
+  else adoptStore(remote,raw);
   setSync('已同步 · '+new Date().toLocaleTimeString(),true);
  }catch(e){if(!storeReady(STORE)){const loc=loadLocal();if(storeReady(loc))adoptStore(loc,null)}setSync('讀取失敗：'+e.message,false)}
  finally{pullBusy=false}}
