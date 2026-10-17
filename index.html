@@ -238,8 +238,11 @@ label{font-size:11px;margin-bottom:6px}
 
 const DBKEY='fuyu-monogatari-v1';
 const GH_OWNER='hanna921202',GH_REPO='fuyu-monogatari-2026',GH_PATH='data/store.json';
-/* 共用編輯權杖：僅限此 repo Contents 讀寫。有連結的人都能改資料（刻意如此）。 */
-const GH_TOKEN='';
+/* 共用編輯權杖：從網址 #edit=... 或本機記住；不寫死在程式碼裡（避免 GitHub 阻擋）。 */
+function readEditToken(){
+  try{const m=location.hash.match(/(?:^|#|&)edit=([^&]+)/);if(m){const t=decodeURIComponent(m[1]);localStorage.setItem('fuyu-edit-token',t);return t}
+  return localStorage.getItem('fuyu-edit-token')||''}catch(e){return ''}}
+let GH_TOKEN=readEditToken();
 const listeners={};
 let STORE={},storeSha=null,pushTimer=null,pullBusy=false,lastRemote='',syncStatus='';
 function loadLocal(){try{return JSON.parse(localStorage.getItem(DBKEY))||{}}catch(e){return {}}}
