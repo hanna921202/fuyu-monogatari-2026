@@ -45,7 +45,7 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .badge{font-size:12px;padding:2px 12px;border-radius:99px;background:var(--acc2);color:var(--ink);letter-spacing:.1em}
 .tl{list-style:none;margin:14px 0 0;padding:0 0 0 22px;border-left:1px solid var(--line)}
 .tl li{position:relative;padding:0 0 18px 14px}
-.tl li::before{content:"❄";position:absolute;left:-30px;top:0;font-size:13px;color:var(--acc);background:var(--bg);border-radius:50%;width:16px;text-align:center}
+.tl li::before{content:"";position:absolute;left:-29px;top:2px;width:14px;height:14px;background-color:var(--acc);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M12 2.5v19M4.5 7l15 10M4.5 17l15-10'/%3E%3Cpath d='M12 5.2l1.4-1.8M12 5.2 10.6 3.4M12 18.8l1.4 1.8M12 18.8l-1.4 1.8M6.4 8.1l-1.8-.4M6.4 8.1l.2-1.9M17.6 15.9l1.8.4M17.6 15.9l-.2 1.9M6.4 15.9l-1.8.4M6.4 15.9l.2 1.9M17.6 8.1l1.8-.4M17.6 8.1l-.2-1.9'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M12 2.5v19M4.5 7l15 10M4.5 17l15-10'/%3E%3Cpath d='M12 5.2l1.4-1.8M12 5.2 10.6 3.4M12 18.8l1.4 1.8M12 18.8l-1.4 1.8M6.4 8.1l-1.8-.4M6.4 8.1l.2-1.9M17.6 15.9l1.8.4M17.6 15.9l-.2 1.9M6.4 15.9l-1.8.4M6.4 15.9l.2 1.9M17.6 8.1l1.8-.4M17.6 8.1l-.2-1.9'/%3E%3C/svg%3E") center/contain no-repeat}
 .tl .t{font-family:"Cormorant Garamond",serif;color:var(--acc);font-size:15px;letter-spacing:.1em}
 .tl .n{font-weight:600}.tl .m{color:var(--mute);font-size:14px}
 .tbd{color:var(--mute);font-style:italic;padding:10px 0}
@@ -82,7 +82,7 @@ textarea{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);b
 .pb{height:6px;background:var(--line);border-radius:9px;overflow:hidden}.pb i{display:block;height:100%;background:var(--acc);transition:width .4s}
 .pi{display:flex;gap:8px;align-items:flex-start;padding:5px 0;margin:0;font-size:15px;color:var(--ink)}.pi.cl{cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
 .phd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.phd .sub2{margin:0}.phd .btn{margin:0}
-.pi .sf{color:var(--acc);opacity:.45;font-size:13px;line-height:1.9}.pi.on .sf{opacity:1}
+.pi .sf{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-top:3px;color:var(--acc);opacity:.45;flex:0 0 auto}.pi .sf svg{width:100%;height:100%;display:block}.pi.on .sf{opacity:1}
 .pi input{margin-top:7px}.pi .nm{display:block}.pi.on .nm{text-decoration:line-through;opacity:.55}.pi .nt{display:block;font-size:12px;color:var(--mute)}
 .pg{margin-bottom:16px}.pit{margin:8px 0 0;padding:8px 10px}
 .ch{margin:20px 0 8px;color:var(--acc);letter-spacing:.15em}.ch small{color:var(--mute);letter-spacing:0}
@@ -119,8 +119,10 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #drawer .pn{position:absolute;top:0;bottom:0;left:0;width:min(78vw,300px);background:var(--bg);border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 72px) 18px 24px;transform:translateX(-102%);transition:transform .28s;overflow-y:auto}
 #drawer.open{pointer-events:auto}#drawer.open .ov{opacity:1}#drawer.open .pn{transform:none}
 .dt{font-family:"Cormorant Garamond",var(--jp);letter-spacing:.18em;color:var(--mute);margin-bottom:14px}
-.dl button{display:block;width:100%;text-align:left;font:inherit;font-size:16px;letter-spacing:.12em;padding:12px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
+.dl button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;font-size:16px;letter-spacing:.12em;padding:12px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
 .dl button.act{color:var(--acc);font-weight:600}
+.dl button .ico-snow{width:14px;height:14px;flex:0 0 auto;opacity:.72;color:var(--acc)}
+.dl button.act .ico-snow{opacity:1}
 .sec{display:none}.sec.on{display:block}
 .tl li.hasimg{display:flex;gap:12px;align-items:flex-start}.tl .tx{flex:1;min-width:0}
 .ti{width:104px;height:76px;object-fit:cover;border-radius:12px;flex:0 0 auto;cursor:zoom-in;box-shadow:0 6px 16px -8px rgba(20,50,90,.45)}
@@ -182,7 +184,7 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .badge{font-size:10px;padding:1px 8px;letter-spacing:.06em}
 .tl{margin:8px 0 0;padding-left:16px}
 .tl li{padding:0 0 12px 10px}
-.tl li::before{left:-24px;font-size:11px;width:14px}
+.tl li::before{left:-23px;top:1px;width:12px;height:12px}
 .tl .t{font-size:13px}.tl .m{font-size:12px}
 .tl li.hasimg{gap:8px}
 .ti{width:72px;height:54px;border-radius:8px}
@@ -217,7 +219,8 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 #jukebox #jb-next{border-color:rgba(120,150,180,.28);background:rgba(255,255,255,.22)}
 #jukebox #jb-next svg{width:11px;height:11px;opacity:.9}
 #drawer .pn{width:min(72vw,260px);padding:calc(env(safe-area-inset-top,0px) + 56px) 14px 20px}
-.dl button{font-size:14px;padding:10px 8px;letter-spacing:.08em}
+.dl button{font-size:14px;padding:10px 8px;letter-spacing:.08em;gap:8px}
+.dl button .ico-snow{width:12px;height:12px}
 .dt{font-size:13px;margin-bottom:10px}
 footer{font-size:11px;padding:20px 0 36px}
 input,textarea,select{font-size:14px;padding:5px 8px;border-radius:7px}
@@ -559,7 +562,7 @@ let PK=cl(PK0),eP=false,dP=null,undoPK=null;
 const pkBox=document.getElementById('pack');
 function renderPack(){
  if(!eP){let all=0,dn=0;PK.forEach(g=>g.items.forEach(x=>{all++;if(x.done)dn++}));
-  pkBox.innerHTML=`<div class="phd"><div class="sub2">已打包 ${dn} / ${all}</div>${canEdit?`<span><button class="btn s" data-a="reset">↺ 重置</button>${undoPK?'<button class="btn s" data-a="undo">↶ 復原</button>':''}</span>`:''}</div><div class="pb"><i style="width:${all?dn/all*100:0}%"></i></div><div class="shop pk">${PK.map((g,gi)=>`<div class="card"><h4 style="margin:0 0 6px;color:var(--acc);letter-spacing:.12em">${esc(g.title)}</h4>${g.items.map((x,ii)=>`<div class="pi${x.done?' on':''}${canEdit?' cl':''}" data-g="${gi}" data-i="${ii}"><span class="sf">❄</span><span><span class="nm">${esc(x.name)}</span>${x.note?`<span class="nt">${esc(x.note)}</span>`:''}</span></div>`).join('')}</div>`).join('')}</div>`+(canEdit?'<button class="btn" data-a="edit">✎ 編輯行李清單</button>':'');return}
+  pkBox.innerHTML=`<div class="phd"><div class="sub2">已打包 ${dn} / ${all}</div>${canEdit?`<span><button class="btn s" data-a="reset">↺ 重置</button>${undoPK?'<button class="btn s" data-a="undo">↶ 復原</button>':''}</span>`:''}</div><div class="pb"><i style="width:${all?dn/all*100:0}%"></i></div><div class="shop pk">${PK.map((g,gi)=>`<div class="card"><h4 style="margin:0 0 6px;color:var(--acc);letter-spacing:.12em">${esc(g.title)}</h4>${g.items.map((x,ii)=>`<div class="pi${x.done?' on':''}${canEdit?' cl':''}" data-g="${gi}" data-i="${ii}"><span class="sf">${SNOW_ICO}</span><span><span class="nm">${esc(x.name)}</span>${x.note?`<span class="nt">${esc(x.note)}</span>`:''}</span></div>`).join('')}</div>`).join('')}</div>`+(canEdit?'<button class="btn" data-a="edit">✎ 編輯行李清單</button>':'');return}
  pkBox.innerHTML=`<div class="banner">後台編輯模式 · 行李收納清單</div>${dP.map((g,gi)=>`<div class="item pg" data-g="${gi}"><label>分類名稱<input data-gf="1" value="${esc(g.title)}"></label>${g.items.map((x,ii)=>`<div class="item pit" data-g="${gi}" data-i="${ii}"><div class="row"><label>物品<input data-f="name" value="${esc(x.name)}"></label><label>備註<input data-f="note" value="${esc(x.note)}"></label></div><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn s" data-a="addi">＋ 新增物品</button><button class="btn s del" data-a="delg">刪除分類</button></div>`).join('')}<button class="btn" data-a="addg">＋ 新增分類</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="pmsg"></span></div>`}
 pkBox.addEventListener('input',e=>{if(!eP)return;const t=e.target,pg=t.closest('.pg');if(!pg)return;
  if(t.dataset.gf)dP[+pg.dataset.g].title=t.value;else if(t.dataset.f){const it=t.closest('.pit');dP[+it.dataset.g].items[+it.dataset.i][t.dataset.f]=t.value}});
@@ -689,7 +692,8 @@ acBox.addEventListener('change',async e=>{if(e.target.id==='ab'){const old=LG.bu
 function watchLedger(){db.collection('ledger').onSnapshot(sn=>{sn.docs.forEach(doc=>{if(doc.id==='main'){const v=doc.data()||{};LG={budget:v.budget||0,list:cl(v.list||[])}}});renderAcct()},()=>{})}
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','想去清單'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-acct','記帳']];
 const dr=document.getElementById('drawer'),mb=document.getElementById('mb');
-let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">❄ ${t}</button>`).join('')}buildMenu();
+const SNOW_ICO=`<svg class="ico-snow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><path d="M12 2.5v19M4.5 7l15 10M4.5 17l15-10"/><path d="M12 5.2l1.4-1.8M12 5.2 10.6 3.4M12 18.8l1.4 1.8M12 18.8l-1.4 1.8M6.4 8.1l-1.8-.4M6.4 8.1l.2-1.9M17.6 15.9l1.8.4M17.6 15.9l-.2 1.9M6.4 15.9l-1.8.4M6.4 15.9l.2 1.9M17.6 8.1l1.8-.4M17.6 8.1l-.2-1.9"/></g></svg>`;
+let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">${SNOW_ICO}<span>${t}</span></button>`).join('')}buildMenu();
 function validSec(id){return SECS.some(([s])=>s===id&&(s!=='s-acct'||canEdit))}
 function openSec(id,jump){
  if(!validSec(id))id='home';
@@ -702,7 +706,7 @@ function openSec(id,jump){
 }
 function tgl(o){dr.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
 mb.onclick=()=>tgl(!dr.classList.contains('open'));
-dr.addEventListener('click',e=>{const s=e.target.dataset.s;if(s){openSec(s,true);tgl(false)}else if(e.target.classList.contains('ov'))tgl(false)});
+dr.addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){openSec(b.dataset.s,true);tgl(false)}else if(e.target.classList.contains('ov'))tgl(false)});
 addEventListener('keydown',e=>{if(e.key==='Escape')tgl(false)});
 addEventListener('hashchange',()=>{const id=(location.hash||'').replace(/^#/,'')||'home';if(validSec(id))openSec(id,false)});
 (()=>{let id=(location.hash||'').replace(/^#/,'');if(!id){try{id=sessionStorage.getItem('fuyu-sec')||''}catch(e){id=''}}openSec(validSec(id)?id:'home',false)})();
