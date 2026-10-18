@@ -105,6 +105,10 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .shgrid .sp{flex:none}
 #mb{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:0}
 #mb span{display:block;width:20px;height:2px;background:var(--ink);border-radius:2px}
+#goHome{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 12px);left:calc(12px + 44px + 8px);width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;color:var(--ink)}
+#goHome.show{display:inline-flex}
+#goHome svg{width:16px;height:16px;display:block}
+#goHome:hover{border-color:var(--acc);color:var(--acc)}
 #jukebox{position:fixed;z-index:51;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;left:auto;width:min(210px,calc(100vw - 76px));padding:8px 10px;border-radius:14px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -16px rgba(20,50,90,.4);display:flex;flex-direction:column;gap:6px;font-family:var(--jp)}
 #jukebox .jb-row{display:flex;align-items:center;gap:8px}
 #jukebox .jb-meta{flex:1;min-width:0;line-height:1.25}
@@ -219,6 +223,8 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .jb{margin-top:10px}.jh{font-size:15px}.jq{font-size:12px}.jl{font-size:11px}
 #mb{top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;width:36px;height:36px;border-radius:10px;gap:4px}
 #mb span{width:16px}
+#goHome{top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(8px + 36px + 6px);width:30px;height:30px;border-radius:9px}
+#goHome svg{width:14px;height:14px}
 #jukebox{top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;left:auto;width:min(180px,calc(100vw - 64px));padding:6px 8px;border-radius:12px}
 #jukebox .jb-title{font-size:11px}#jukebox button{width:28px;height:28px;font-size:11px}
 #jukebox button svg{width:12px;height:12px}
@@ -245,6 +251,9 @@ label{font-size:11px;margin-bottom:6px}
 </head>
 <body>
 <button id="mb" aria-label="選單" aria-expanded="false"><span></span><span></span><span></span></button>
+<button type="button" id="goHome" aria-label="回到首頁" title="回到首頁">
+ <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V19a1 1 0 0 0 1 1h3.2v-5.2h2.6V20h3.2a1 1 0 0 0 1-1V9.5"/></svg>
+</button>
 <div id="jukebox" aria-label="迷你點唱機">
  <audio id="jb-audio" preload="metadata" crossorigin="anonymous"></audio>
  <div class="jb-row">
@@ -715,7 +724,7 @@ acBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if
 acBox.addEventListener('change',async e=>{if(e.target.id==='ab'){const old=LG.budget;LG.budget=Number(e.target.value)||0;if(!await saveLG())LG.budget=old;renderAcct()}});
 function watchLedger(){db.collection('ledger').onSnapshot(sn=>{sn.docs.forEach(doc=>{if(doc.id==='main'){const v=doc.data()||{};LG={budget:v.budget||0,list:cl(v.list||[])}}});renderAcct()},()=>{})}
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','想去清單'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-acct','記帳']];
-const dr=document.getElementById('drawer'),mb=document.getElementById('mb');
+const dr=document.getElementById('drawer'),mb=document.getElementById('mb'),goHome=document.getElementById('goHome');
 let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">${SNOW_ICO}<span>${t}</span></button>`).join('')}buildMenu();
 function validSec(id){return SECS.some(([s])=>s===id&&(s!=='s-acct'||canEdit))}
 function openSec(id,jump){
@@ -723,6 +732,7 @@ function openSec(id,jump){
  curSec=id;
  document.querySelectorAll('.sec').forEach(x=>x.classList.toggle('on',(id==='home'&&!x.classList.contains('noh'))||x.id===id));
  dr.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('act',b.dataset.s===id));
+ if(goHome)goHome.classList.toggle('show',id!=='home');
  try{sessionStorage.setItem('fuyu-sec',id)}catch(e){}
  try{const h=id==='home'?'':('#'+id);if(location.hash!==h)history.replaceState(null,'',h||(location.pathname+location.search))}catch(e){}
  try{if(typeof STAY!=='undefined'&&STAY.render)STAY.render()}catch(e){}
@@ -730,6 +740,7 @@ function openSec(id,jump){
 }
 function tgl(o){dr.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
 mb.onclick=()=>tgl(!dr.classList.contains('open'));
+if(goHome)goHome.onclick=()=>{tgl(false);openSec('home',true);try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}};
 dr.addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){openSec(b.dataset.s,true);tgl(false)}else if(e.target.classList.contains('ov'))tgl(false)});
 addEventListener('keydown',e=>{if(e.key==='Escape')tgl(false)});
 addEventListener('hashchange',()=>{const id=(location.hash||'').replace(/^#/,'')||'home';if(validSec(id))openSec(id,false)});
