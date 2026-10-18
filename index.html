@@ -466,24 +466,41 @@ const FL0=[
 const WJP={'日':'日','一':'月','二':'火','三':'水','四':'木','五':'金','六':'土','月':'月','火':'火','水':'水','木':'木','金':'金','土':'土'};
 const toJpW=w=>WJP[String(w||'').trim()]||w;
 const WCATS0=['北海道','東京'];
+/* 景點圖片對應每日行程 images/ */
 const WSPOTS0=[
-{region:'北海道',name:'二條市場'},{region:'北海道',name:'狸小路商店街'},{region:'北海道',name:'中島公園'},{region:'北海道',name:'大通公園'},{region:'北海道',name:'薄野'},
-{region:'北海道',name:'旭山動物園'},{region:'北海道',name:'美瑛・四季彩之丘'},{region:'北海道',name:'富良野 森林精靈露臺'},
-{region:'北海道',name:'北海道神宮'},{region:'北海道',name:'定山溪溫泉'},{region:'北海道',name:'小樽運河'},{region:'北海道',name:'堺町通'},{region:'北海道',name:'天狗山夜景'},
-{region:'北海道',name:'新千歲機場（前往東京）'},
-{region:'東京',name:'原宿'},{region:'東京',name:'新宿'},{region:'東京',name:'花園神社'},
-{region:'東京',name:'川越一番街商店街'},{region:'東京',name:'藏造老屋街道'},
-{region:'東京',name:'東京迪士尼'},
-{region:'東京',name:'淺草寺'},{region:'東京',name:'秋葉原'},{region:'東京',name:'蒲田'},
-{region:'東京',name:'酒酒井 Outlet'},{region:'東京',name:'成田山新勝寺'}
+{region:'北海道',name:'二條市場',img:'images/DAY1-02.jpg'},{region:'北海道',name:'狸小路商店街',img:'images/DAY1-03.jpg'},{region:'北海道',name:'中島公園',img:'images/DAY1-04.jpg'},{region:'北海道',name:'大通公園',img:'images/DAY1-05.jpg'},{region:'北海道',name:'薄野',img:'images/DAY1-06.jpg'},
+{region:'北海道',name:'旭山動物園',img:'images/DAY2-02.jpg'},{region:'北海道',name:'美瑛・四季彩之丘',img:'images/DAY2-03.jpg'},{region:'北海道',name:'富良野 森林精靈露臺',img:'images/DAY2-04.jpg'},
+{region:'北海道',name:'北海道神宮',img:'images/DAY3-01.jpg'},{region:'北海道',name:'定山溪溫泉',img:'images/DAY3-02.jpg'},{region:'北海道',name:'小樽運河',img:'images/DAY3-04.jpg'},{region:'北海道',name:'堺町通',img:'images/DAY3-05.jpg'},{region:'北海道',name:'天狗山夜景',img:'images/DAY3-08.jpg'},
+{region:'北海道',name:'新千歲機場（前往東京）',img:'images/DAY1-01.jpg'},
+{region:'東京',name:'原宿',img:'images/DAY5-01.jpg'},{region:'東京',name:'新宿',img:'images/DAY5-04.jpg'},{region:'東京',name:'花園神社',img:'images/DAY5-02.jpg'},
+{region:'東京',name:'川越一番街商店街',img:'images/DAY8-01.jpg'},{region:'東京',name:'藏造老屋街道',img:'images/DAY8-02.jpg'},
+{region:'東京',name:'東京迪士尼',img:'images/DAY7-01.jpg'},
+{region:'東京',name:'淺草寺',img:'images/DAY6-01.jpg'},{region:'東京',name:'秋葉原',img:'images/DAY6-02.jpg'},{region:'東京',name:'蒲田',img:''},
+{region:'東京',name:'酒酒井 Outlet',img:'images/DAY9-02.jpg'},{region:'東京',name:'成田山新勝寺',img:'images/DAY9-03.jpg'}
 ];
+function itineraryImgMap(){
+ const map={};
+ const src=typeof DAYS!=='undefined'&&DAYS.length?DAYS:BASE;
+ (src||[]).forEach(d=>(d.items||[]).forEach(it=>{if(it&&it.img&&it.n)map[String(it.n).trim()]=it.img}));
+ const alias={'美瑛・四季彩之丘':['美瑛 & 四季彩之丘'],'定山溪溫泉':['定山溪神社 & 溫泉日歸泡湯','定山溪'],'天狗山夜景':['山頂展望台賞夜景','天狗山'],'新千歲機場（前往東京）':['新千歲機場 → 羽田機場','新千歲機場','桃園國際機場 → 新千歲機場'],'東京迪士尼':['東京迪士尼'],'川越一番街商店街':['川越一番街商店街'],'酒酒井 Outlet':['酒酒井 Outlet']};
+ Object.keys(alias).forEach(k=>alias[k].forEach(a=>{if(map[a]&&!map[k])map[k]=map[a]}));
+ WSPOTS0.forEach(s=>{if(s.img&&!map[s.name])map[s.name]=s.img});
+ return map;
+}
+function fillSpotImg(s){
+ if(s.img)return s;
+ const map=itineraryImgMap();
+ if(map[s.name])return {...s,img:map[s.name]};
+ const hit=Object.keys(map).find(k=>s.name.includes(k)||k.includes(s.name));
+ return hit?{...s,img:map[hit]}:s;
+}
 function normWish(v){
  const def=()=>({regions:cl(WCATS0),spots:cl(WSPOTS0),list:[]});
  if(!v||typeof v!=='object')return def();
  /* 新格式：regions + spots + list(商店) */
  if(Array.isArray(v.spots)||(Array.isArray(v.list)&&v.list.some(x=>x&&x.spot!=null))){
   const regions=Array.isArray(v.regions)&&v.regions.length?v.regions.map(String):(Array.isArray(v.cats)&&v.cats.length?v.cats.map(String):cl(WCATS0));
-  const spots=asList(v.spots||[]).map(s=>({region:String(s.region||regions[0]||'東京'),name:String(s.name||'').trim()})).filter(s=>s.name);
+  let spots=asList(v.spots||[]).map(s=>({region:String(s.region||regions[0]||'東京'),name:String(s.name||'').trim(),img:s.img||''})).filter(s=>s.name).map(fillSpotImg);
   const list=asList(v.list||[]).map(x=>({name:String(x.name||''),region:String(x.region||''),spot:String(x.spot||''),date:String(x.date||''),addr:String(x.addr||''),hours:String(x.hours||''),note:String(x.note||''),img:x.img||''}));
   return {regions,spots:spots.length?spots:cl(WSPOTS0),list};
  }
@@ -494,16 +511,16 @@ function normWish(v){
   asList(v.list).forEach(x=>{
    const region=String(x.cat||x.region||regions[regions.length-1]||'東京');
    const spot=String(x.name||'').trim();if(!spot)return;
-   if(!spots.some(s=>s.region===region&&s.name===spot))spots.push({region,name:spot});
-   if(x.addr||x.hours||x.note||x.img)list.push({name:spot,region,spot,date:String(x.date||''),addr:String(x.addr||''),hours:String(x.hours||''),note:String(x.note||''),img:x.img||''});
+   if(!spots.some(s=>s.region===region&&s.name===spot))spots.push(fillSpotImg({region,name:spot,img:x.img||''}));
+   if(x.addr||x.hours||x.note||(x.img&&x.spot))list.push({name:spot,region,spot,date:String(x.date||''),addr:String(x.addr||''),hours:String(x.hours||''),note:String(x.note||''),img:x.img||''});
   });
-  return {regions,spots:spots.length?spots:cl(WSPOTS0),list};
+  return {regions,spots:spots.length?spots.map(fillSpotImg):cl(WSPOTS0),list};
  }
  /* 最舊 hk/tk 格式 */
  const map={hk:'北海道',tk:'東京'},spots=[];
  ['hk','tk'].forEach(r=>{(v[r]||[]).forEach(g=>{(g.items||[]).forEach(it=>{
   const name=typeof it==='string'?it.trim():String(it&&it.name||'').trim();
-  if(name&&!spots.some(s=>s.region===map[r]&&s.name===name))spots.push({region:map[r],name});
+  if(name&&!spots.some(s=>s.region===map[r]&&s.name===name))spots.push(fillSpotImg({region:map[r],name,img:''}));
  })})});
  return {regions:cl(WCATS0),spots:spots.length?spots:cl(WSPOTS0),list:[]};
 }
@@ -517,15 +534,15 @@ const spotsIn=region=>WSPOTS.filter(s=>s.region===wRegionOf(region));
 const shopsIn=(region,spot)=>WL.map((x,i)=>[x,i]).filter(([x])=>x.region===region&&x.spot===spot);
 async function saveWish(extra){const payload=Object.assign({regions:WCATS,spots:WSPOTS,list:WL,cats:WCATS},extra||{});await db.collection('trip').doc('wishes').set(payload)}
 function wishCard(x,compact){const src=blobSrc(x.img);return `<div class="card sp">${src?`<img class="zoom" src="${src}" alt="${esc(x.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.date,x.addr,x.hours].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}</div></div>`}
-function spotCard(s){const n=shopsIn(s.region,s.name).length;return `<div class="card sp"><div class="ph" style="aspect-ratio:1.4;font-size:15px;letter-spacing:.12em">${esc(s.name)}</div><div class="sb"><div class="n">${esc(s.name)}</div><div class="m">${n?n+' 間商店':'尚未加入商店'}</div></div></div>`}
+function spotCard(s){const n=shopsIn(s.region,s.name).length;const src=blobSrc(s.img);return `<div class="card sp">${src?`<img class="zoom" src="${src}" alt="${esc(s.name)}" loading="lazy">`:`<div class="ph" style="aspect-ratio:4/3;font-size:15px;letter-spacing:.12em">${esc(s.name)}</div>`}<div class="sb"><div class="n">${esc(s.name)}</div><div class="m">${n?n+' 間商店':'尚未加入商店'}</div></div></div>`}
 function startEditShops(region,spot){wEditRegion=region;wEditSpot=spot;wRegion=region;wSpot=spot;dW=cl(WL.filter(x=>x.region===region&&x.spot===spot));eW=true;eWCat=false;eWSpot=false;renderWish()}
-function startEditSpots(region){wEditRegion=region;wRegion=region;dWSpot=cl(spotsIn(region).map(s=>s.name));eWSpot=true;eW=false;eWCat=false;renderWish()}
+function startEditSpots(region){wEditRegion=region;wRegion=region;dWSpot=cl(spotsIn(region).map(s=>({name:s.name,img:s.img||''})));eWSpot=true;eW=false;eWCat=false;renderWish()}
 function renderFlights(){
  if(!eF){flBox.innerHTML=`<div class="flights">${FL.map(f=>`<div class="card fl"><div class="d">${esc(f.date)}<small class="dw">${esc(toJpW(f.w))}</small></div><div class="r">${esc(f.from)}<i aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10.18 9 5.78 2.23A1 1 0 0 0 4.93 1.76H3.66a1 1 0 0 0-.86 1.5L6.2 9H3.5L2.15 7.35a.5.5 0 0 0-.4-.2H.8a.5.5 0 0 0-.4.8L2.2 11 .4 13.85a.5.5 0 0 0 .4.8h.95a.5.5 0 0 0 .4-.2L3.5 13h2.7l-3.4 5.5a1 1 0 0 0 .86 1.5h1.27a1 1 0 0 0 .85-.47L10.18 13H21a2 2 0 1 0 0-4H10.18z"/></svg></i>${esc(f.to)}</div>${f.airline||f.no?`<div class="no">${esc(f.airline)} ${esc(f.no)}</div>`:''}${f.dep||f.arr?`<div class="tm">${esc(f.dep||'--:--')} → ${esc(f.arr||'--:--')}</div>`:''}${f.note?`<div class="nt">${esc(f.note)}</div>`:''}</div>`).join('')}</div>${canEdit?'<button class="btn" data-a="edit">✎ 編輯航班</button>':''}`;return}
  flBox.innerHTML=`<div class="banner">後台編輯模式 · 航班</div>${dF.map((f,i)=>`<div class="item" data-i="${i}"><div class="row">${FF.map(([k,l,c])=>`<label class="${c}">${l}<input data-f="${k}" value="${esc(f[k])}"></label>`).join('')}</div><label>備註<textarea data-f="note">${esc(f.note)}</textarea></label><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增航班</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="fmsg"></span></div>`}
 function renderWish(){
  if(eWCat){wsBox.innerHTML=`<div class="banner">編輯大標籤（地區）</div>${dWCat.map((c,i)=>`<div class="item" data-i="${i}"><div class="row"><label>地區名稱<input data-f="catname" value="${esc(c)}"></label></div><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="delcat">刪除</button></div></div>`).join('')}<button class="btn" data-a="addcat">＋ 新增地區</button><div class="bar"><button class="btn pri" data-a="savecat">儲存</button><button class="btn" data-a="cancelcat">取消</button><span id="wmsg"></span></div>`;return}
- if(eWSpot){const reg=wEditRegion||'地區';wsBox.innerHTML=`<div class="banner">編輯「${esc(reg)}」景點小標籤</div>${dWSpot.map((n,i)=>`<div class="item" data-i="${i}"><div class="row"><label>景點名稱<input data-f="spotname" value="${esc(n)}"></label></div><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="delspot">刪除</button></div></div>`).join('')}<button class="btn" data-a="addspot">＋ 新增景點</button><div class="bar"><button class="btn pri" data-a="savespot">儲存</button><button class="btn" data-a="cancelspot">取消</button><span id="wmsg"></span></div>`;return}
+ if(eWSpot){const reg=wEditRegion||'地區';wsBox.innerHTML=`<div class="banner">編輯「${esc(reg)}」景點小標籤</div>${dWSpot.map((s,i)=>{const src=blobSrc(s.img);return `<div class="item" data-i="${i}"><div class="row"><label>景點名稱<input data-f="spotname" value="${esc(s.name)}"></label></div>${src?`<img class="pv zoom" src="${src}" alt="">`:''}<label>${s.img?'更換圖片':'上傳圖片'}<input type="file" accept="image/*" data-up="spot"></label><div class="ctl">${s.img?'<button class="btn s" data-a="rmspotimg">移除圖片</button>':''}<button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="delspot">刪除</button></div></div>`}).join('')}<button class="btn" data-a="addspot">＋ 新增景點</button><div class="bar"><button class="btn pri" data-a="savespot">儲存</button><button class="btn" data-a="cancelspot">取消</button><span id="wmsg"></span></div>`;return}
  if(eW){const title=`${wEditRegion} · ${wEditSpot}`;wsBox.innerHTML=`<div class="banner">編輯「${esc(title)}」商店</div>${dW.map((x,i)=>{const src=blobSrc(x.img);return `<div class="item" data-i="${i}"><div class="row"><label>商店／店名<input data-f="name" value="${esc(x.name)}"></label><label class="sm">日期<input data-f="date" value="${esc(x.date)}" placeholder="11/26"></label></div><div class="row"><label>地址<input data-f="addr" value="${esc(x.addr)}" placeholder="例：景點內 B1…"></label><label>營業時間<input data-f="hours" value="${esc(x.hours)}" placeholder="例：10:00–18:00"></label></div><label>備註<textarea data-f="note">${esc(x.note)}</textarea></label>${src?`<img class="pv" src="${src}" alt="">`:''}<label>${x.img?'更換圖片':'上傳圖片'}<input type="file" accept="image/*" data-up="1"></label><div class="ctl">${x.img?'<button class="btn s" data-a="rmimg">移除圖片</button>':''}<button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`}).join('')}<button class="btn" data-a="add">＋ 新增商店</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="wmsg"></span></div>`;return}
  if(wView==='spot'&&wRegion&&wSpot){
   const L=shopsIn(wRegion,wSpot);
@@ -559,11 +576,12 @@ flBox.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return
  renderFlights()});
 wsBox.addEventListener('input',e=>{const f=e.target.dataset.f,it=e.target.closest('.item');
  if(eWCat&&f==='catname'&&it){dWCat[+it.dataset.i]=e.target.value;return}
- if(eWSpot&&f==='spotname'&&it){dWSpot[+it.dataset.i]=e.target.value;return}
+ if(eWSpot&&f==='spotname'&&it){dWSpot[+it.dataset.i].name=e.target.value;return}
  if(!eW||!f||!it)return;dW[+it.dataset.i][f]=e.target.value});
 wsBox.addEventListener('change',async e=>{const t=e.target;
- if(t.dataset.up&&eW&&t.files[0]){const i=+t.closest('.item').dataset.i,m=document.getElementById('wmsg');m.textContent='圖片上傳中…';
-  try{const as=await claude.use('assets');if(!as)throw 0;const r=await as.upload(await shrink(t.files[0]));dW[i].img=r.id;renderWish()}catch(err){m.textContent='圖片上傳失敗，請確認有編輯權限'}}});
+ if(t.dataset.up&&t.files[0]){const i=+t.closest('.item').dataset.i,m=document.getElementById('wmsg');m.textContent='圖片上傳中…';
+  try{const as=await claude.use('assets');if(!as)throw 0;const r=await as.upload(await shrink(t.files[0]));
+   if(t.dataset.up==='spot'&&eWSpot)dWSpot[i].img=r.id;else if(eW)dW[i].img=r.id;renderWish()}catch(err){m.textContent='圖片上傳失敗，請確認有編輯權限'}}});
 wsBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,it=t.closest('.item'),i=it?+it.dataset.i:-1;
  if(a==='viewregion'){wView='region';wRegion=t.dataset.region||'';wSpot='';return renderWish()}
  if(a==='viewspot'){wView='spot';wRegion=t.dataset.region||'';wSpot=t.dataset.spot||'';return renderWish()}
@@ -584,13 +602,16 @@ wsBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if
   return renderWish()}
  if(a==='editspots'){return startEditSpots(t.dataset.region||wRegion||WCATS[0])}
  if(a==='cancelspot'){eWSpot=false;dWSpot=null;return renderWish()}
- if(a==='addspot'){dWSpot.push('新景點');return renderWish()}
+ if(a==='addspot'){dWSpot.push({name:'新景點',img:''});return renderWish()}
  if(a==='delspot'&&eWSpot){dWSpot.splice(i,1);return renderWish()}
+ if(a==='rmspotimg'&&eWSpot){dWSpot[i].img='';return renderWish()}
  if(a==='savespot'){const m=document.getElementById('wmsg');m.textContent='儲存中…';
-  const reg=wEditRegion||WCATS[0];const next=dWSpot.map(x=>String(x||'').trim()).filter(Boolean);const uniq=[...new Set(next)];
-  const old=spotsIn(reg).map(s=>s.name);
-  const renameSpot=n=>{if(uniq.includes(n))return n;const idx=old.indexOf(n);return idx>=0&&uniq[idx]?uniq[idx]:(uniq[0]||'')};
-  WSPOTS=WSPOTS.filter(s=>s.region!==reg).concat(uniq.map(name=>({region:reg,name})));
+  const reg=wEditRegion||WCATS[0];
+  const cleaned=dWSpot.map(x=>({name:String(x.name||'').trim(),img:x.img||''})).filter(x=>x.name);
+  const seen=new Set();const uniq=[];cleaned.forEach(x=>{if(seen.has(x.name))return;seen.add(x.name);uniq.push(x)});
+  const old=spotsIn(reg);
+  const renameSpot=n=>{if(uniq.some(u=>u.name===n))return n;const idx=old.findIndex(s=>s.name===n);return idx>=0&&uniq[idx]?uniq[idx].name:(uniq[0]&&uniq[0].name||'')};
+  WSPOTS=WSPOTS.filter(s=>s.region!==reg).concat(uniq.map(x=>({region:reg,name:x.name,img:x.img||''})));
   WL=WL.map(x=>{if(x.region!==reg)return x;const spot=renameSpot(x.spot);return spot?{...x,spot}:null}).filter(Boolean);
   try{await saveWish();eWSpot=false;dWSpot=null;wView='region';wRegion=reg}catch(err){m.textContent='儲存失敗';return}
   return renderWish()}
