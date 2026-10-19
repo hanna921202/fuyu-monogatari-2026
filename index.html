@@ -76,6 +76,13 @@ textarea{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);b
 .sp{padding:0;overflow:hidden}.sp img,.sp .ph{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--bg2)}
 .sp img{cursor:zoom-in}
 .sp .ph{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--acc)}
+.sp-media{position:relative}
+.sp-rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.sp-rail::-webkit-scrollbar{display:none;width:0;height:0}
+.sp-rail img{flex:0 0 100%;width:100%;max-width:100%;scroll-snap-align:start}
+.sp-dots{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:5px;pointer-events:none}
+.sp-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.42);box-shadow:0 0 0 1px rgba(20,40,70,.18)}
+.sp-dots i.on{background:#fff}
 .sp .sb{padding:12px 16px 14px}.sp .n{font-weight:600}.sp .m{font-size:13px;color:var(--mute)}.sp .nt{font-size:13px;margin-top:4px;white-space:pre-wrap}
 .sp.got .n{text-decoration:line-through;opacity:.6}.sp.got img{opacity:.55}
 .ck{display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:13px;color:var(--ink)}input[type=checkbox]{display:inline-block;width:auto;margin:0}
@@ -660,7 +667,7 @@ const shBox=document.getElementById('shop'),IMG=id=>blobSrc(id);
 const shopImgs=x=>asImgs(x&&x.imgs).length?asImgs(x.imgs):asImgs(x&&x.img);
 function normShopItem(x){const o={...x,imgs:shopImgs(x)};delete o.img;return o}
 async function saveShop(extra){const payload=Object.assign({list:SH.map(normShopItem),cats:CATS},extra||{});await db.collection('trip').doc('shopping').set(payload)}
-function shopCard(x,i,compact){const ids=shopImgs(x).filter(id=>IMG(id)),cover=ids[0];return `<div class="card sp${x.bought?' got':''}">${cover?`<img class="zoom" src="${IMG(cover)}" alt="${esc(x.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}${ids.length>1?' · '+ids.length+' 張圖':''}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${!compact&&ids.length>1?`<div class="thumbs" style="margin-top:8px">${ids.slice(1).map(id=>`<img class="ti" src="${IMG(id)}" alt="" loading="lazy">`).join('')}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
+function shopCard(x,i,compact){const ids=shopImgs(x).filter(id=>IMG(id));const media=ids.length?`<div class="sp-media"><div class="sp-rail">${ids.map(id=>`<img class="zoom" src="${IMG(id)}" alt="${esc(x.name)}" loading="lazy">`).join('')}</div>${ids.length>1?`<div class="sp-dots">${ids.map((_,k)=>`<i${k===0?' class="on"':''}></i>`).join('')}</div>`:''}</div>`:'<div class="ph">❄</div>';return `<div class="card sp${x.bought?' got':''}">${media}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
 function startEditCat(cat){shEditCat=cat||(CATS[0]||'其他');shFocus=shEditCat;dS=cl(SH.filter(x=>catOf(x)===shEditCat)).map(normShopItem);eS=true;eCat=false;renderShop()}
 function renderShop(){
  const done=SH.filter(x=>x.bought).length;
@@ -679,6 +686,8 @@ function renderShop(){
     <div class="bar" style="margin-top:4px">${canEdit?`<button class="btn s" data-a="edit" data-cat="${esc(c)}">✎ 編輯</button>`:''}<button class="more" type="button" data-a="viewcat" data-cat="${esc(c)}">查看所有商品 →</button></div></div>`}).join('')}`;
 }
 function shrink(file){return new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(),'image/jpeg',.82)};im.onerror=rej;im.src=u})}
+function syncShopDots(rail){const dots=rail.parentElement&&rail.parentElement.querySelector('.sp-dots');if(!dots)return;const w=rail.clientWidth||1,i=Math.round(rail.scrollLeft/w);[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i))}
+shBox.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('sp-rail'))syncShopDots(t)},true);
 shBox.addEventListener('input',e=>{const f=e.target.dataset.f,it=e.target.closest('.item');
  if(eCat&&f==='catname'&&it){dCat[+it.dataset.i]=e.target.value;return}
  if(!eS||!f||!it)return;dS[+it.dataset.i][f]=e.target.type==='checkbox'?e.target.checked:e.target.value});
