@@ -651,19 +651,21 @@ function asImgs(v){if(!v)return[];if(Array.isArray(v))return v.map(String).filte
 function watchTrip(){db.collection('trip').onSnapshot(sn=>{sn.docs.forEach(doc=>{const v=doc.data()||{};
  if(doc.id==='flights'&&v.list!=null&&!eF)FL=cl(asList(v.list));
  if(doc.id==='wishes'&&!eW&&!eWCat&&!eWSpot){const n=normWish(v);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}
- if(doc.id==='shopping'&&!eS&&!eCat){if(v.list!=null)SH=cl(asList(v.list));if(Array.isArray(v.cats)&&v.cats.length)CATS=v.cats.map(String)}
+ if(doc.id==='shopping'&&!eS&&!eCat){if(v.list!=null)SH=cl(asList(v.list)).map(normShopItem);if(Array.isArray(v.cats)&&v.cats.length)CATS=v.cats.map(String)}
  if(doc.id==='packing'&&v.groups&&!eP)PK=cl(v.groups);if(doc.id==='currency'&&v.list!=null&&!eC)CR=cl(asList(v.list));if(doc.id==='stays'&&v.list!=null)STAY.set(asList(v.list));if(doc.id==='ootd'&&v.list!=null)OOTD.set(asList(v.list));if(doc.id==='journal'&&v.list!=null)JNL.set(asList(v.list))});renderTrip()},()=>{})}
 let SH=[],eS=false,dS=null,eCat=false,dCat=null,shView='home',shFocus='',shEditCat='';
 let CATS=['美食','美妝','電玩','其他'];
 const catOf=x=>{const c=String(x&&x.cat||'').trim();return CATS.includes(c)?c:(CATS[CATS.length-1]||'其他')};
 const shBox=document.getElementById('shop'),IMG=id=>blobSrc(id);
-async function saveShop(extra){const payload=Object.assign({list:SH,cats:CATS},extra||{});await db.collection('trip').doc('shopping').set(payload)}
-function shopCard(x,i,compact){return `<div class="card sp${x.bought?' got':''}">${IMG(x.img)?`<img class="zoom" src="${IMG(x.img)}" alt="${esc(x.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
-function startEditCat(cat){shEditCat=cat||(CATS[0]||'其他');shFocus=shEditCat;dS=cl(SH.filter(x=>catOf(x)===shEditCat));eS=true;eCat=false;renderShop()}
+const shopImgs=x=>asImgs(x&&x.imgs).length?asImgs(x.imgs):asImgs(x&&x.img);
+function normShopItem(x){const o={...x,imgs:shopImgs(x)};delete o.img;return o}
+async function saveShop(extra){const payload=Object.assign({list:SH.map(normShopItem),cats:CATS},extra||{});await db.collection('trip').doc('shopping').set(payload)}
+function shopCard(x,i,compact){const ids=shopImgs(x).filter(id=>IMG(id)),cover=ids[0];return `<div class="card sp${x.bought?' got':''}">${cover?`<img class="zoom" src="${IMG(cover)}" alt="${esc(x.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}${ids.length>1?' · '+ids.length+' 張圖':''}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${!compact&&ids.length>1?`<div class="thumbs" style="margin-top:8px">${ids.slice(1).map(id=>`<img class="ti" src="${IMG(id)}" alt="" loading="lazy">`).join('')}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
+function startEditCat(cat){shEditCat=cat||(CATS[0]||'其他');shFocus=shEditCat;dS=cl(SH.filter(x=>catOf(x)===shEditCat)).map(normShopItem);eS=true;eCat=false;renderShop()}
 function renderShop(){
  const done=SH.filter(x=>x.bought).length;
  if(eCat){shBox.innerHTML=`<div class="banner">編輯分類標籤</div><p class="sub2">可新增、重新命名或刪除。刪除後該分類商品會移到最後一個標籤。</p>${dCat.map((c,i)=>`<div class="item" data-i="${i}"><div class="row"><label>標籤名稱<input data-f="catname" value="${esc(c)}"></label></div><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="delcat">刪除</button></div></div>`).join('')}<button class="btn" data-a="addcat">＋ 新增標籤</button><div class="bar"><button class="btn pri" data-a="savecat">儲存標籤</button><button class="btn" data-a="cancelcat">取消</button><span id="smsg"></span></div>`;return}
- if(eS){const cat=shEditCat||'商品';shBox.innerHTML=`<div class="banner">編輯「${esc(cat)}」商品</div>${dS.map((x,i)=>`<div class="item" data-i="${i}"><div class="row"><label>商品名稱<input data-f="name" value="${esc(x.name)}"></label><label>購買地點／店家<input data-f="store" value="${esc(x.store)}"></label><label class="sm">預算<input data-f="price" value="${esc(x.price)}" placeholder="¥1,000"></label></div><label>備註<textarea data-f="note">${esc(x.note)}</textarea></label>${IMG(x.img)?`<img class="pv" src="${IMG(x.img)}" alt="">`:''}<label>${x.img?'更換圖片':'上傳圖片'}<input type="file" accept="image/*" data-up="1"></label><label class="ck"><input type="checkbox" data-f="bought" ${x.bought?'checked':''}> 已購買</label><div class="ctl">${x.img?'<button class="btn s" data-a="rmimg">移除圖片</button>':''}<button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增「${esc(cat)}」商品</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="smsg"></span></div>`;return}
+ if(eS){const cat=shEditCat||'商品';shBox.innerHTML=`<div class="banner">編輯「${esc(cat)}」商品</div>${dS.map((x,i)=>{const ids=shopImgs(x);return `<div class="item" data-i="${i}"><div class="row"><label>商品名稱<input data-f="name" value="${esc(x.name)}"></label><label>購買地點／店家<input data-f="store" value="${esc(x.store)}"></label><label class="sm">預算<input data-f="price" value="${esc(x.price)}" placeholder="¥1,000"></label></div><label>備註<textarea data-f="note">${esc(x.note)}</textarea></label><div class="pvs">${ids.map((id,k)=>`<span class="pvw"><img class="pvd" src="${IMG(id)}" alt=""><button class="btn s del" data-a="rmimg" data-p="${k}">✕</button></span>`).join('')}</div><label>新增圖片（可多張，不會覆蓋）<input type="file" accept="image/*" multiple data-up="1"></label><label class="ck"><input type="checkbox" data-f="bought" ${x.bought?'checked':''}> 已購買</label><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`}).join('')}<button class="btn" data-a="add">＋ 新增「${esc(cat)}」商品</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="smsg"></span></div>`;return}
  if(shView==='cat'&&shFocus){
   const L=SH.map((x,i)=>[x,i]).filter(([x])=>catOf(x)===shFocus);
   const bought=L.filter(([x])=>x.bought).length;
@@ -682,10 +684,11 @@ shBox.addEventListener('input',e=>{const f=e.target.dataset.f,it=e.target.closes
  if(!eS||!f||!it)return;dS[+it.dataset.i][f]=e.target.type==='checkbox'?e.target.checked:e.target.value});
 shBox.addEventListener('change',async e=>{const t=e.target;
  if(t.classList.contains('tog')){const i=+t.dataset.i,old=SH[i].bought;SH[i].bought=t.checked;try{await saveShop()}catch(err){SH[i].bought=old}renderShop();return}
- if(t.dataset.up&&eS&&t.files[0]){const i=+t.closest('.item').dataset.i,m=document.getElementById('smsg');m.textContent='圖片上傳中…';
-  try{const as=await claude.use('assets');if(!as)throw 0;const r=await as.upload(await shrink(t.files[0]));dS[i].img=r.id;renderShop()}catch(err){m.textContent='圖片上傳失敗，請確認有編輯權限'}}});
-shBox.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;const it=e.target.closest('.item'),i=it?+it.dataset.i:-1;
- if(a==='viewcat'){shView='cat';shFocus=e.target.dataset.cat||'';return renderShop()}
+ if(t.dataset.up&&eS&&t.files.length){const i=+t.closest('.item').dataset.i,m=document.getElementById('smsg'),fs=[...t.files];let err=false;
+  try{const as=await claude.use('assets');if(!as)throw 0;for(let k=0;k<fs.length;k++){if(m)m.textContent='圖片上傳中…（'+(k+1)+'/'+fs.length+'）';const r=await as.upload(await shrink(fs[k]));if(!dS[i])throw 0;dS[i].imgs=shopImgs(dS[i]).concat([r.id])}}catch(x){err=true}
+  t.value='';renderShop();if(err){const msg=document.getElementById('smsg');if(msg)msg.textContent='圖片上傳失敗，請確認有編輯權限'}return}});
+shBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,it=t.closest('.item'),i=it?+it.dataset.i:-1;
+ if(a==='viewcat'){shView='cat';shFocus=t.dataset.cat||'';return renderShop()}
  if(a==='back'){shView='home';shFocus='';return renderShop()}
  if(a==='editcats'){dCat=cl(CATS);eCat=true;eS=false;return renderShop()}
  if(a==='cancelcat'){eCat=false;dCat=null;return renderShop()}
@@ -698,16 +701,16 @@ shBox.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return
   SH=SH.map(x=>{const c=String(x.cat||'').trim();if(uniq.includes(c))return x;const idx=old.indexOf(c);return {...x,cat:idx>=0&&uniq[idx]?uniq[idx]:fallback}});
   CATS=uniq;try{await saveShop();eCat=false;dCat=null;if(shFocus&&!CATS.includes(shFocus)){shView='home';shFocus=''}}catch(err){m.textContent='儲存失敗';return}
   return renderShop()}
- if(a==='edit'){return startEditCat(e.target.dataset.cat||shFocus||CATS[0])}
+ if(a==='edit'){return startEditCat(t.dataset.cat||shFocus||CATS[0])}
  if(a==='cancel'){eS=false;dS=null;shEditCat='';return renderShop()}
- else if(a==='add')dS.push({name:'',store:'',price:'',note:'',img:'',bought:false,cat:shEditCat||CATS[0]||'其他'});
+ else if(a==='add')dS.push({name:'',store:'',price:'',note:'',imgs:[],bought:false,cat:shEditCat||CATS[0]||'其他'});
  else if(a==='del'&&eS)dS.splice(i,1);
- else if(a==='rmimg')dS[i].img='';
+ else if(a==='rmimg'&&eS){dS[i].imgs=shopImgs(dS[i]);dS[i].imgs.splice(+t.dataset.p,1)}
  else if(a==='up'&&i>0){if(eCat)[dCat[i-1],dCat[i]]=[dCat[i],dCat[i-1]];else if(eS)[dS[i-1],dS[i]]=[dS[i],dS[i-1]]}
  else if(a==='down'){if(eCat&&i<dCat.length-1)[dCat[i+1],dCat[i]]=[dCat[i],dCat[i+1]];else if(eS&&i<dS.length-1)[dS[i+1],dS[i]]=[dS[i],dS[i+1]]}
  else if(a==='save'){const m=document.getElementById('smsg');m.textContent='儲存中…';
   const cat=shEditCat||CATS[0]||'其他';
-  const edited=dS.filter(x=>x.name.trim()||x.img).map(x=>({...x,name:x.name.trim(),cat}));
+  const edited=dS.filter(x=>String(x.name||'').trim()||shopImgs(x).length).map(x=>normShopItem({...x,name:String(x.name||'').trim(),cat}));
   const rest=SH.filter(x=>catOf(x)!==cat);
   try{SH=rest.concat(edited);await saveShop();eS=false;dS=null;shFocus=cat;shView='cat';shEditCat=''}catch(err){m.textContent='儲存失敗，請確認有編輯權限';return}}
  renderShop()});
@@ -901,7 +904,7 @@ lb.onclick=()=>lb.classList.remove('on');
 document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='IMG'&&t.src&&t.classList&&(t.classList.contains('ti')||t.classList.contains('zoom'))){lb.firstChild.src=t.src;lb.classList.add('on')}});
 
 function keepImgs(k,items){const base=(BASE[k]&&BASE[k].items)||[];return (items||[]).map(it=>{const fixed={...it,n:spotNameFix(String(it.n||'').trim())};if(fixed.img||Object.prototype.hasOwnProperty.call(it,'img'))return fixed;const hit=base.find(b=>b.img&&spotNameFix(String(b.n).trim())===fixed.n);return hit?{...fixed,img:hit.img}:fixed})}
-function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>{const k=+id.slice(1),v=daysS[id];if(DAYS[k]&&v)DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});const t=STORE.trip||{};if(t.flights&&t.flights.list!=null)FL=cl(asList(t.flights.list));if(t.wishes){const n=normWish(t.wishes);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}if(t.shopping){if(t.shopping.list!=null)SH=cl(asList(t.shopping.list));if(Array.isArray(t.shopping.cats)&&t.shopping.cats.length)CATS=t.shopping.cats.map(String)}if(t.packing&&t.packing.groups)PK=cl(t.packing.groups);if(t.currency&&t.currency.list!=null)CR=cl(asList(t.currency.list));if(t.stays&&t.stays.list!=null)STAY.set(asList(t.stays.list));if(t.ootd&&t.ootd.list!=null)OOTD.set(asList(t.ootd.list));if(t.journal&&t.journal.list!=null)JNL.set(asList(t.journal.list));const led=STORE.ledger&&STORE.ledger.main;if(led)LG={budget:led.budget||0,list:cl(asList(led.list||[]))}}
+function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>{const k=+id.slice(1),v=daysS[id];if(DAYS[k]&&v)DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});const t=STORE.trip||{};if(t.flights&&t.flights.list!=null)FL=cl(asList(t.flights.list));if(t.wishes){const n=normWish(t.wishes);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}if(t.shopping){if(t.shopping.list!=null)SH=cl(asList(t.shopping.list)).map(normShopItem);if(Array.isArray(t.shopping.cats)&&t.shopping.cats.length)CATS=t.shopping.cats.map(String)}if(t.packing&&t.packing.groups)PK=cl(t.packing.groups);if(t.currency&&t.currency.list!=null)CR=cl(asList(t.currency.list));if(t.stays&&t.stays.list!=null)STAY.set(asList(t.stays.list));if(t.ootd&&t.ootd.list!=null)OOTD.set(asList(t.ootd.list));if(t.journal&&t.journal.list!=null)JNL.set(asList(t.journal.list));const led=STORE.ledger&&STORE.ledger.main;if(led)LG={budget:led.budget||0,list:cl(asList(led.list||[]))}}
 /* 必須放在 FL/SH/STAY 等宣告之後，否則 applyStore 會丟錯並跳過雲端同步（購物清單最容易因此重整後消失） */
 (async()=>{try{
  if(storeReady(STORE))applyStore();
