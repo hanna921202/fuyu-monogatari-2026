@@ -402,7 +402,7 @@ addEventListener('visibilitychange',()=>{if(!document.hidden&&booted)remotePull(
 addEventListener('pagehide',()=>{clearTimeout(pushTimer);if(storeReady(STORE))remotePush({keepalive:true}).catch(()=>{})});
 addEventListener('freeze',()=>{clearTimeout(pushTimer);if(storeReady(STORE))remotePush({keepalive:true}).catch(()=>{})});
 // 預設行程；後台儲存後會以資料庫內容覆蓋
-const BASE=[{"d":"11/26","w":"四","c":"札幌","title":"抵達北海道・札幌初雪","items":[{"m":"抵達後前往札幌市區","n":"桃園國際機場 → 新千歲機場","t":"06:00","img":"images/DAY1-01.jpg"},{"m":"海鮮丼、北海道早市氣氛","n":"二條市場","t":"08:00","img":"images/DAY1-02.jpg"},{"m":"有頂棚的商店街，下雪也能逛","n":"狸小路商店街","t":"10:30","img":"images/DAY1-03.jpg"},{"m":"散步路線：從地下鐵「中島公園站」出來→漫步雪景菖蒲池→參觀百年藍白色木造洋館「豐平館」拍照 →日本庭園","n":"中島公園","t":"13:30","img":"images/DAY1-04.jpg"},{"m":"順路看 札幌白色燈樹節 與 慕尼黑聖誕市集 點燈","n":"大通公園","t":"16:00","img":"images/DAY1-05.jpg"},{"m":"札幌最熱鬧的夜晚街區","n":"薄野","t":"18:00","img":"images/DAY1-06.jpg"}]},{"d":"11/27","w":"五","c":"北海道","title":"北海道","items":[{"m":"","n":"札幌→旭川","t":"7:30","img":"images/DAY2-01.jpg"},{"m":"","n":"旭山動物園","t":"10:00","img":"images/DAY2-02.jpg"},{"m":"","n":"美瑛 & 四季彩之丘","t":"13:15","img":"images/DAY2-03.jpg"},{"m":"","n":"富良野 森林精靈露臺","t":"15:30","img":"images/DAY2-04.jpg"},{"m":"","n":"返回札幌市區","t":"17:00","img":"images/DAY2-05.jpg"}]},{"d":"11/28","w":"六","c":"北海道","title":"北海道","items":[{"m":"","n":"北海道神宮","t":"08:00","img":"images/DAY3-01.jpg"},{"m":"","n":"定山溪神社 & 溫泉日歸泡湯","t":"09:40","img":"images/DAY3-02.jpg"},{"m":"搭乘定山溪直達小樽巴士，或經札幌轉乘 JR","n":"前往小樽","t":"13:30"},{"m":"","n":"小樽運河  ","t":"14:40","img":"images/DAY3-04.jpg"},{"m":"","n":"堺町通","t":"15:00","img":"images/DAY3-05.jpg"},{"m":"在「小樽站前公車總站」3 號月台搭乘 中央巴士 9 號線（天狗山線），約 20 分鐘即可直達「天狗山纜車山腳站」","n":"前往山腳站","t":"16:00"},{"m":"","n":"購票與搭乘纜車","t":"16:20"},{"m":"山頂有 5 個不同角度的展望台（包含重現《First Love 初戀》場景的地點）、天狗山神社、天狗館以及小景觀餐廳/咖啡廳","n":"山頂展望台賞夜景","t":"16:30","img":"images/DAY3-08.jpg"},{"m":"搭纜車下山，於山腳站搭乘公車返回小樽站前或小樽運河區享用晚餐","n":"搭纜車下山與返程","t":"17:30"},{"m":"","n":"返回札幌","t":"19:00"}]},{"d":"11/29","w":"日","c":"移動日","title":"北海道 → 東京","items":[{"m":"抵達東京，入住飯店","n":"新千歲機場 → 羽田機場","t":""},{"m":"","n":"莆田","t":""}]},{"d":"11/30","w":"一","c":"東京","title":"東京","items":[{"m":"","n":"原宿","t":"10:30","img":"images/DAY5-01.jpg"},{"m":"5 Chome-17-3 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"花園神社","t":"14:00","img":"images/DAY5-02.jpg"},{"m":"ピカデリー Ｂ１, ２Ｆ, 3 Chome-15-15 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"無印良品 新宿靖國通","t":"17:00","img":"images/DAY5-03.jpg"},{"m":"","n":"新宿","t":"19:00","img":"images/DAY5-04.jpg"}]},{"d":"12/01","w":"二","c":"川越","title":"小江戶川越","items":[{"m":"","n":"川越一番街商店街","t":"","img":"images/DAY8-01.jpg"},{"m":"江戶風情的黑瓦老街","n":"藏造老屋街道","t":"","img":"images/DAY8-02.jpg"}]},{"d":"12/02","w":"三","c":"東京","title":"東京海洋迪士尼","items":[{"m":"整天","n":"東京迪士尼","t":"","img":"images/DAY7-01.jpg"}]},{"d":"12/03","w":"四","c":"東京","title":"東京（待安排）","items":[{"m":"候選","n":"淺草寺","t":"","img":"images/DAY6-01.jpg"},{"m":"候選","n":"秋葉原","t":"","img":"images/DAY6-02.jpg"}]},{"d":"12/04","w":"五","c":"成田","title":"成田・返程","items":[{"m":"餐廳","n":"早餐","t":"9:00"},{"m":"購物","n":"酒酒井 Outlet","t":"10:30","img":"images/DAY9-02.jpg"},{"m":"","n":"成田山新勝寺","t":"","img":"images/DAY9-03.jpg"},{"m":"返台","n":"成田機場 → 桃園國際機場","t":"","img":"images/DAY9-04.jpg"}]}];
+const BASE=[{"d":"11/26","w":"四","c":"札幌","title":"抵達北海道・札幌初雪","items":[{"m":"抵達後前往札幌市區","n":"桃園國際機場 → 新千歲機場","t":"06:00","img":"images/DAY1-01.jpg"},{"m":"海鮮丼、北海道早市氣氛","n":"二條市場","t":"08:00","img":"images/DAY1-02.jpg"},{"m":"有頂棚的商店街，下雪也能逛","n":"狸小路商店街","t":"10:30","img":"images/DAY1-03.jpg"},{"m":"散步路線：從地下鐵「中島公園站」出來→漫步雪景菖蒲池→參觀百年藍白色木造洋館「豐平館」拍照 →日本庭園","n":"中島公園","t":"13:30","img":"images/DAY1-04.jpg"},{"m":"順路看 札幌白色燈樹節 與 慕尼黑聖誕市集 點燈","n":"大通公園","t":"16:00","img":"images/DAY1-05.jpg"},{"m":"札幌最熱鬧的夜晚街區","n":"薄野","t":"18:00","img":"images/DAY1-06.jpg"}]},{"d":"11/27","w":"五","c":"北海道","title":"北海道","items":[{"m":"","n":"札幌→旭川","t":"7:30","img":"images/DAY2-01.jpg"},{"m":"","n":"旭山動物園","t":"10:00","img":"images/DAY2-02.jpg"},{"m":"","n":"美瑛 & 四季彩之丘","t":"13:15","img":"images/DAY2-03.jpg"},{"m":"","n":"富良野 森林精靈露臺","t":"15:30","img":"images/DAY2-04.jpg"},{"m":"","n":"返回札幌市區","t":"17:00","img":"images/DAY2-05.jpg"}]},{"d":"11/28","w":"六","c":"北海道","title":"北海道","items":[{"m":"","n":"北海道神宮","t":"08:00","img":"images/DAY3-01.jpg"},{"m":"","n":"定山溪神社 & 溫泉日歸泡湯","t":"09:40","img":"images/DAY3-02.jpg"},{"m":"搭乘定山溪直達小樽巴士，或經札幌轉乘 JR","n":"前往小樽","t":"13:30"},{"m":"","n":"小樽運河  ","t":"14:40","img":"images/DAY3-04.jpg"},{"m":"","n":"堺町通","t":"15:00","img":"images/DAY3-05.jpg"},{"m":"在「小樽站前公車總站」3 號月台搭乘 中央巴士 9 號線（天狗山線），約 20 分鐘即可直達「天狗山纜車山腳站」","n":"前往山腳站","t":"16:00"},{"m":"","n":"購票與搭乘纜車","t":"16:20"},{"m":"山頂有 5 個不同角度的展望台（包含重現《First Love 初戀》場景的地點）、天狗山神社、天狗館以及小景觀餐廳/咖啡廳","n":"山頂展望台賞夜景","t":"16:30","img":"images/DAY3-08.jpg"},{"m":"搭纜車下山，於山腳站搭乘公車返回小樽站前或小樽運河區享用晚餐","n":"搭纜車下山與返程","t":"17:30"},{"m":"","n":"返回札幌","t":"19:00"}]},{"d":"11/29","w":"日","c":"移動日","title":"北海道 → 東京","items":[{"m":"抵達東京，入住飯店","n":"新千歲機場 → 羽田機場","t":""},{"m":"","n":"蒲田","t":""}]},{"d":"11/30","w":"一","c":"東京","title":"東京","items":[{"m":"","n":"原宿","t":"10:30","img":"images/DAY5-01.jpg"},{"m":"5 Chome-17-3 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"花園神社","t":"14:00","img":"images/DAY5-02.jpg"},{"m":"ピカデリー Ｂ１, ２Ｆ, 3 Chome-15-15 Shinjuku, Shinjuku City, Tokyo 160-0022日本","n":"無印良品 新宿靖國通","t":"17:00","img":"images/DAY5-03.jpg"},{"m":"","n":"新宿","t":"19:00","img":"images/DAY5-04.jpg"}]},{"d":"12/01","w":"二","c":"川越","title":"小江戶川越","items":[{"m":"","n":"川越一番街商店街","t":"","img":"images/DAY8-01.jpg"},{"m":"江戶風情的黑瓦老街","n":"藏造老屋街道","t":"","img":"images/DAY8-02.jpg"}]},{"d":"12/02","w":"三","c":"東京","title":"東京海洋迪士尼","items":[{"m":"整天","n":"東京迪士尼","t":"","img":"images/DAY7-01.jpg"}]},{"d":"12/03","w":"四","c":"東京","title":"東京（待安排）","items":[{"m":"候選","n":"淺草寺","t":"","img":"images/DAY6-01.jpg"},{"m":"候選","n":"秋葉原","t":"","img":"images/DAY6-02.jpg"}]},{"d":"12/04","w":"五","c":"成田","title":"成田・返程","items":[{"m":"餐廳","n":"早餐","t":"9:00"},{"m":"購物","n":"酒酒井 Outlet","t":"10:30","img":"images/DAY9-02.jpg"},{"m":"","n":"成田山新勝寺","t":"","img":"images/DAY9-03.jpg"},{"m":"返台","n":"成田機場 → 桃園國際機場","t":"","img":"images/DAY9-04.jpg"}]}];
 let DAYS=JSON.parse(JSON.stringify(BASE)),cur=0,edit=false,db=localDb,canEdit=true,draft=null;
 const tabs=document.getElementById('tabs'),box=document.getElementById('day'),fab=document.getElementById('fab');
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -475,26 +475,25 @@ const WSPOTS0=[
 {region:'東京',name:'原宿',img:'images/DAY5-01.jpg'},{region:'東京',name:'新宿',img:'images/DAY5-04.jpg'},{region:'東京',name:'花園神社',img:'images/DAY5-02.jpg'},
 {region:'東京',name:'川越一番街商店街',img:'images/DAY8-01.jpg'},{region:'東京',name:'藏造老屋街道',img:'images/DAY8-02.jpg'},
 {region:'東京',name:'東京迪士尼',img:'images/DAY7-01.jpg'},
-{region:'東京',name:'淺草寺',img:'images/DAY6-01.jpg'},{region:'東京',name:'秋葉原',img:'images/DAY6-02.jpg'},{region:'東京',name:'莆田',img:''},
+{region:'東京',name:'淺草寺',img:'images/DAY6-01.jpg'},{region:'東京',name:'秋葉原',img:'images/DAY6-02.jpg'},{region:'東京',name:'蒲田',img:''},
 {region:'東京',name:'酒酒井 Outlet',img:'images/DAY9-02.jpg'},{region:'東京',name:'成田山新勝寺',img:'images/DAY9-03.jpg'}
 ];
 function itineraryImgMap(){
  const map={};
  const src=typeof DAYS!=='undefined'&&DAYS.length?DAYS:BASE;
- (src||[]).forEach(d=>(d.items||[]).forEach(it=>{if(it&&it.img&&it.n)map[String(it.n).trim()]=it.img}));
- const alias={'美瑛・四季彩之丘':['美瑛 & 四季彩之丘'],'定山溪溫泉':['定山溪神社 & 溫泉日歸泡湯','定山溪'],'天狗山夜景':['山頂展望台賞夜景','天狗山'],'新千歲機場（前往東京）':['新千歲機場 → 羽田機場','新千歲機場','桃園國際機場 → 新千歲機場'],'東京迪士尼':['東京迪士尼'],'川越一番街商店街':['川越一番街商店街'],'酒酒井 Outlet':['酒酒井 Outlet'],'莆田':['蒲田'],'蒲田':['莆田']};
+ (src||[]).forEach(d=>(d.items||[]).forEach(it=>{if(it&&it.img&&it.n)map[spotNameFix(String(it.n).trim())]=it.img}));
+ const alias={'美瑛・四季彩之丘':['美瑛 & 四季彩之丘'],'定山溪溫泉':['定山溪神社 & 溫泉日歸泡湯','定山溪'],'天狗山夜景':['山頂展望台賞夜景','天狗山'],'新千歲機場（前往東京）':['新千歲機場 → 羽田機場','新千歲機場','桃園國際機場 → 新千歲機場'],'東京迪士尼':['東京迪士尼'],'川越一番街商店街':['川越一番街商店街'],'酒酒井 Outlet':['酒酒井 Outlet'],'\u84b2\u7530':['\u8386\u7530']};
  Object.keys(alias).forEach(k=>alias[k].forEach(a=>{if(map[a]&&!map[k])map[k]=map[a]}));
  WSPOTS0.forEach(s=>{if(s.img&&!map[s.name])map[s.name]=s.img});
  return map;
 }
-function spotNameFix(n){return n==='蒲田'?'莆田':n}
+function spotNameFix(n){return n==='\u8386\u7530'?'\u84b2\u7530':n}
 function fillSpotImg(s){
  const name=spotNameFix(String(s.name||'').trim());
  const base={...s,name};
  if(base.img)return base;
  const map=itineraryImgMap();
  if(map[name])return {...base,img:map[name]};
- if(map['莆田']&&(name==='莆田'||name==='蒲田'))return {...base,name:'莆田',img:map['莆田']};
  const hit=Object.keys(map).find(k=>name.includes(k)||k.includes(name));
  return hit?{...base,img:map[hit]}:base;
 }
@@ -502,7 +501,6 @@ function refreshSpotImgs(){
  if(eW||eWCat||eWSpot)return false;
  let ch=false;
  WSPOTS=WSPOTS.map(s=>{
-  if(s.img&&s.name!=='蒲田')return s;
   const n=fillSpotImg({...s,img:s.img||''});
   if(n.img!==s.img||n.name!==s.name)ch=true;
   return n;
@@ -897,7 +895,7 @@ const lb=document.createElement('div');lb.id='lb';lb.innerHTML='<img alt="">';do
 lb.onclick=()=>lb.classList.remove('on');
 document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='IMG'&&t.src&&t.classList&&(t.classList.contains('ti')||t.classList.contains('zoom'))){lb.firstChild.src=t.src;lb.classList.add('on')}});
 
-function keepImgs(k,items){const base=(BASE[k]&&BASE[k].items)||[];return (items||[]).map(it=>{if(it.img||Object.prototype.hasOwnProperty.call(it,'img'))return it;const hit=base.find(b=>b.img&&String(b.n).trim()===String(it.n||'').trim());return hit?{...it,img:hit.img}:it})}
+function keepImgs(k,items){const base=(BASE[k]&&BASE[k].items)||[];return (items||[]).map(it=>{const fixed={...it,n:spotNameFix(String(it.n||'').trim())};if(fixed.img||Object.prototype.hasOwnProperty.call(it,'img'))return fixed;const hit=base.find(b=>b.img&&spotNameFix(String(b.n).trim())===fixed.n);return hit?{...fixed,img:hit.img}:fixed})}
 function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>{const k=+id.slice(1),v=daysS[id];if(DAYS[k]&&v)DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});const t=STORE.trip||{};if(t.flights&&t.flights.list!=null)FL=cl(asList(t.flights.list));if(t.wishes){const n=normWish(t.wishes);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}if(t.shopping){if(t.shopping.list!=null)SH=cl(asList(t.shopping.list));if(Array.isArray(t.shopping.cats)&&t.shopping.cats.length)CATS=t.shopping.cats.map(String)}if(t.packing&&t.packing.groups)PK=cl(t.packing.groups);if(t.currency&&t.currency.list!=null)CR=cl(asList(t.currency.list));if(t.stays&&t.stays.list!=null)STAY.set(asList(t.stays.list));if(t.ootd&&t.ootd.list!=null)OOTD.set(asList(t.ootd.list));if(t.journal&&t.journal.list!=null)JNL.set(asList(t.journal.list));const led=STORE.ledger&&STORE.ledger.main;if(led)LG={budget:led.budget||0,list:cl(asList(led.list||[]))}}
 /* 必須放在 FL/SH/STAY 等宣告之後，否則 applyStore 會丟錯並跳過雲端同步（購物清單最容易因此重整後消失） */
 (async()=>{try{
