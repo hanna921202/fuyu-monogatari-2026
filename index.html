@@ -186,9 +186,8 @@ h1{font-size:clamp(26px,7.2vw,36px);letter-spacing:.12em;margin:6px 0 4px}
 main{padding:0 12px 88px}
 h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .card{border-radius:12px;padding:12px 14px;box-shadow:0 6px 18px -14px rgba(20,50,90,.3)}
-.flights{gap:0;grid-template-columns:1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.flights .fl{padding:8px 12px;border:0;border-radius:0;border-bottom:1px solid var(--line);background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-.flights .fl:last-child{border-bottom:0}
+.flights{gap:8px;grid-template-columns:1fr;border:0;background:transparent;overflow:visible}
+.flights .fl{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);box-shadow:0 6px 18px -14px rgba(20,50,90,.3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .fl .d{font-size:17px;line-height:1.2}
 .fl .d small,.fl .dw{font-size:10px;letter-spacing:.1em}
 .fl .r{font-size:12px;gap:6px;margin-top:1px}
