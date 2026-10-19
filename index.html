@@ -475,24 +475,39 @@ const WSPOTS0=[
 {region:'東京',name:'原宿',img:'images/DAY5-01.jpg'},{region:'東京',name:'新宿',img:'images/DAY5-04.jpg'},{region:'東京',name:'花園神社',img:'images/DAY5-02.jpg'},
 {region:'東京',name:'川越一番街商店街',img:'images/DAY8-01.jpg'},{region:'東京',name:'藏造老屋街道',img:'images/DAY8-02.jpg'},
 {region:'東京',name:'東京迪士尼',img:'images/DAY7-01.jpg'},
-{region:'東京',name:'淺草寺',img:'images/DAY6-01.jpg'},{region:'東京',name:'秋葉原',img:'images/DAY6-02.jpg'},{region:'東京',name:'蒲田',img:''},
+{region:'東京',name:'淺草寺',img:'images/DAY6-01.jpg'},{region:'東京',name:'秋葉原',img:'images/DAY6-02.jpg'},{region:'東京',name:'莆田',img:''},
 {region:'東京',name:'酒酒井 Outlet',img:'images/DAY9-02.jpg'},{region:'東京',name:'成田山新勝寺',img:'images/DAY9-03.jpg'}
 ];
 function itineraryImgMap(){
  const map={};
  const src=typeof DAYS!=='undefined'&&DAYS.length?DAYS:BASE;
  (src||[]).forEach(d=>(d.items||[]).forEach(it=>{if(it&&it.img&&it.n)map[String(it.n).trim()]=it.img}));
- const alias={'美瑛・四季彩之丘':['美瑛 & 四季彩之丘'],'定山溪溫泉':['定山溪神社 & 溫泉日歸泡湯','定山溪'],'天狗山夜景':['山頂展望台賞夜景','天狗山'],'新千歲機場（前往東京）':['新千歲機場 → 羽田機場','新千歲機場','桃園國際機場 → 新千歲機場'],'東京迪士尼':['東京迪士尼'],'川越一番街商店街':['川越一番街商店街'],'酒酒井 Outlet':['酒酒井 Outlet']};
+ const alias={'美瑛・四季彩之丘':['美瑛 & 四季彩之丘'],'定山溪溫泉':['定山溪神社 & 溫泉日歸泡湯','定山溪'],'天狗山夜景':['山頂展望台賞夜景','天狗山'],'新千歲機場（前往東京）':['新千歲機場 → 羽田機場','新千歲機場','桃園國際機場 → 新千歲機場'],'東京迪士尼':['東京迪士尼'],'川越一番街商店街':['川越一番街商店街'],'酒酒井 Outlet':['酒酒井 Outlet'],'莆田':['蒲田'],'蒲田':['莆田']};
  Object.keys(alias).forEach(k=>alias[k].forEach(a=>{if(map[a]&&!map[k])map[k]=map[a]}));
  WSPOTS0.forEach(s=>{if(s.img&&!map[s.name])map[s.name]=s.img});
  return map;
 }
+function spotNameFix(n){return n==='蒲田'?'莆田':n}
 function fillSpotImg(s){
- if(s.img)return s;
+ const name=spotNameFix(String(s.name||'').trim());
+ const base={...s,name};
+ if(base.img)return base;
  const map=itineraryImgMap();
- if(map[s.name])return {...s,img:map[s.name]};
- const hit=Object.keys(map).find(k=>s.name.includes(k)||k.includes(s.name));
- return hit?{...s,img:map[hit]}:s;
+ if(map[name])return {...base,img:map[name]};
+ if(map['莆田']&&(name==='莆田'||name==='蒲田'))return {...base,name:'莆田',img:map['莆田']};
+ const hit=Object.keys(map).find(k=>name.includes(k)||k.includes(name));
+ return hit?{...base,img:map[hit]}:base;
+}
+function refreshSpotImgs(){
+ if(eW||eWCat||eWSpot)return false;
+ let ch=false;
+ WSPOTS=WSPOTS.map(s=>{
+  if(s.img&&s.name!=='蒲田')return s;
+  const n=fillSpotImg({...s,img:s.img||''});
+  if(n.img!==s.img||n.name!==s.name)ch=true;
+  return n;
+ });
+ return ch;
 }
 function normWish(v){
  const def=()=>({regions:cl(WCATS0),spots:cl(WSPOTS0),list:[]});
@@ -500,8 +515,8 @@ function normWish(v){
  /* 新格式：regions + spots + list(商店) */
  if(Array.isArray(v.spots)||(Array.isArray(v.list)&&v.list.some(x=>x&&x.spot!=null))){
   const regions=Array.isArray(v.regions)&&v.regions.length?v.regions.map(String):(Array.isArray(v.cats)&&v.cats.length?v.cats.map(String):cl(WCATS0));
-  let spots=asList(v.spots||[]).map(s=>({region:String(s.region||regions[0]||'東京'),name:String(s.name||'').trim(),img:s.img||''})).filter(s=>s.name).map(fillSpotImg);
-  const list=asList(v.list||[]).map(x=>({name:String(x.name||''),region:String(x.region||''),spot:String(x.spot||''),date:String(x.date||''),addr:String(x.addr||''),hours:String(x.hours||''),note:String(x.note||''),img:x.img||''}));
+  let spots=asList(v.spots||[]).map(s=>({region:String(s.region||regions[0]||'東京'),name:spotNameFix(String(s.name||'').trim()),img:s.img||''})).filter(s=>s.name).map(fillSpotImg);
+  const list=asList(v.list||[]).map(x=>({name:String(x.name||''),region:String(x.region||''),spot:spotNameFix(String(x.spot||'')),date:String(x.date||''),addr:String(x.addr||''),hours:String(x.hours||''),note:String(x.note||''),img:x.img||''}));
   return {regions,spots:spots.length?spots:cl(WSPOTS0),list};
  }
  /* 上一版扁平 list+cats：每筆地點升級成景點小標籤 */
@@ -893,7 +908,8 @@ function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>
  setSync('雲端已連線 · 編輯會自動儲存',true);
  if(d){d.collection('days').onSnapshot(sn=>{sn.docs.forEach(doc=>{const k=+doc.id.slice(1),v=doc.data();
    if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
-   renderTabs();if(!edit)renderView()},()=>{})}
+   const spotCh=refreshSpotImgs();
+   renderTabs();if(!edit)renderView();if(spotCh)renderWish()},()=>{})}
  if(!edit)renderView()}catch(e){booted=true;try{await remotePull(true);applyStore();renderTrip()}catch(e2){setSync('啟動同步失敗',false)}}})();
 applyStore();if(!edit)renderView();
 renderTrip();
