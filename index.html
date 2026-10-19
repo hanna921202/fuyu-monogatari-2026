@@ -647,6 +647,7 @@ wsBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if
   try{await saveWish();eW=false;dW=null;wView='spot';wRegion=region;wSpot=spot}catch(err){m.textContent='儲存失敗，請確認有編輯權限';return}}
  renderWish()});
 function asList(v){if(Array.isArray(v))return v;if(v&&typeof v==='object')return Object.keys(v).sort((a,b)=>a-b).map(k=>v[k]).filter(x=>x&&typeof x==='object');return[]}
+function asImgs(v){if(!v)return[];if(Array.isArray(v))return v.map(String).filter(Boolean);if(typeof v==='string')return v?[v]:[];if(typeof v==='object')return Object.keys(v).sort((a,b)=>a-b).map(k=>v[k]).map(String).filter(Boolean);return[]}
 function watchTrip(){db.collection('trip').onSnapshot(sn=>{sn.docs.forEach(doc=>{const v=doc.data()||{};
  if(doc.id==='flights'&&v.list!=null&&!eF)FL=cl(asList(v.list));
  if(doc.id==='wishes'&&!eW&&!eWCat&&!eWSpot){const n=normWish(v);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}
@@ -771,26 +772,29 @@ crBox.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return
  renderCur()});
 function mkList(c){
  const S={L:cl(c.def()),d:null},box=document.getElementById(c.box);
- S.thumbs=(r,k='imgs',x=c.big?'big':'')=>{const ids=(r[k]||[]).filter(id=>blobSrc(id));return ids.length?`<div class="thumbs">${ids.map(id=>`<img class="ti ${x}" src="${blobSrc(id)}" alt="" loading="lazy">`).join('')}</div>`:''};
+ const imgKeys=()=>(c.groups||[['imgs']]).map(g=>g[0]);
+ const normRow=r=>{const o={...r};imgKeys().forEach(k=>{o[k]=asImgs(o[k])});return o};
+ const normList=L=>(L||[]).map(normRow);
+ S.thumbs=(r,k='imgs',x=c.big?'big':'')=>{const ids=asImgs(r[k]).filter(id=>blobSrc(id));return ids.length?`<div class="thumbs">${ids.map(id=>`<img class="ti ${x}" src="${blobSrc(id)}" alt="" loading="lazy">`).join('')}</div>`:''};
  function render(){
   if(!S.d){box.innerHTML=S.L.map(c.view).join('')+(canEdit?`<button class="btn" data-a="edit">✎ 編輯${c.title}</button>`:'');return}
-  box.innerHTML=`<div class="banner">後台編輯模式 · ${c.title}</div>${S.d.map((r,i)=>`<div class="item" data-i="${i}"><div class="row">${c.fields.filter(f=>f[2]!=='ta').map(([k,l,t,w,ph])=>`<label class="${w}">${l}<input type="${t}" data-f="${k}" value="${esc(r[k])}" placeholder="${esc(ph||'')}"></label>`).join('')}</div>${c.fields.filter(f=>f[2]==='ta').map(([k,l,_,__,ph])=>`<label>${l}<textarea data-f="${k}" placeholder="${esc(ph||'')}">${esc(r[k])}</textarea></label>`).join('')}${(c.groups||[['imgs','上傳照片（可多選）']]).map(([gk,gl])=>`<div class="pvs">${(r[gk]||[]).map((id,k)=>`<span class="pvw"><img class="pvd" src="${blobSrc(id)}" alt=""><button class="btn s del" data-a="rmimg" data-g="${gk}" data-p="${k}">✕</button></span>`).join('')}</div><label>${gl}<input type="file" accept="image/*" multiple data-up="${gk}"></label>`).join('')}${c.extraEd?c.extraEd(r):''}<div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增${c.noun}</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span class="lmsg" style="font-size:13px;color:var(--mute)"></span></div>`}
+  box.innerHTML=`<div class="banner">後台編輯模式 · ${c.title}</div>${S.d.map((r,i)=>`<div class="item" data-i="${i}"><div class="row">${c.fields.filter(f=>f[2]!=='ta').map(([k,l,t,w,ph])=>`<label class="${w}">${l}<input type="${t}" data-f="${k}" value="${esc(r[k])}" placeholder="${esc(ph||'')}"></label>`).join('')}</div>${c.fields.filter(f=>f[2]==='ta').map(([k,l,_,__,ph])=>`<label>${l}<textarea data-f="${k}" placeholder="${esc(ph||'')}">${esc(r[k])}</textarea></label>`).join('')}${(c.groups||[['imgs','新增照片（可多張，不會覆蓋）']]).map(([gk,gl])=>`<div class="pvs">${asImgs(r[gk]).map((id,k)=>`<span class="pvw"><img class="pvd" src="${blobSrc(id)}" alt=""><button class="btn s del" data-a="rmimg" data-g="${gk}" data-p="${k}">✕</button></span>`).join('')}</div><label>${gl}<input type="file" accept="image/*" multiple data-up="${gk}"></label>`).join('')}${c.extraEd?c.extraEd(r):''}<div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增${c.noun}</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span class="lmsg" style="font-size:13px;color:var(--mute)"></span></div>`}
  box.addEventListener('input',e=>{const t=e.target,it=t.closest('.item');if(!S.d||!it)return;const r=S.d[+it.dataset.i];if(t.dataset.f)r[t.dataset.f]=t.value;else if(c.extraIn)c.extraIn(t,r)});
  box.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,it=t.closest('.item'),i=it?+it.dataset.i:-1,D=S.d;
-  if(a==='edit')S.d=cl(S.L);else if(a==='cancel')S.d=null;
+  if(a==='edit')S.d=normList(cl(S.L));else if(a==='cancel')S.d=null;
   else if(!D)return;
-  else if(a==='add')D.push(c.blank());
+  else if(a==='add')D.push(normRow(c.blank()));
   else if(a==='del')D.splice(i,1);
   else if(a==='up'&&i>0)[D[i-1],D[i]]=[D[i],D[i-1]];
   else if(a==='down'&&i<D.length-1)[D[i+1],D[i]]=[D[i],D[i+1]];
-  else if(a==='rmimg')D[i][t.dataset.g||'imgs'].splice(+t.dataset.p,1);
-  else if(a==='save'){const m=box.querySelector('.lmsg');m.textContent='儲存中…';const out=c.clean?c.clean(D):D;try{await db.collection('trip').doc(c.doc).set({list:out});S.L=cl(out);S.d=null}catch(err){m.textContent='儲存失敗，請確認有編輯權限';return}}
+  else if(a==='rmimg'){const g=t.dataset.g||'imgs';D[i][g]=asImgs(D[i][g]);D[i][g].splice(+t.dataset.p,1)}
+  else if(a==='save'){const m=box.querySelector('.lmsg');m.textContent='儲存中…';const prepared=normList(D);const out=c.clean?c.clean(prepared):prepared;try{await db.collection('trip').doc(c.doc).set({list:out});S.L=cl(out);S.d=null}catch(err){m.textContent='儲存失敗，請確認有編輯權限';return}}
   else if(c.extraClk)c.extraClk(a,t,D[i]);
   render()});
- box.addEventListener('change',async e=>{const t=e.target;if(!t.dataset.up||!S.d||!t.files.length)return;const r=S.d[+t.closest('.item').dataset.i],m=box.querySelector('.lmsg'),fs=[...t.files];let err=false;
-  try{const as=await claude.use('assets');if(!as)throw 0;for(let k=0;k<fs.length;k++){m.textContent='圖片上傳中…（'+(k+1)+'/'+fs.length+'）';const u=await as.upload(await shrink(fs[k]));(r[t.dataset.up]=r[t.dataset.up]||[]).push(u.id)}}catch(x){err=true}
-  render();if(err)box.querySelector('.lmsg').textContent='圖片上傳失敗，請確認有編輯權限'});
- S.set=l=>{if(!S.d){S.L=cl(l);render()}};S.render=render;return S}
+ box.addEventListener('change',async e=>{const t=e.target;if(!t.dataset.up||!S.d||!t.files.length)return;const i=+t.closest('.item').dataset.i,key=t.dataset.up,m=box.querySelector('.lmsg'),fs=[...t.files];let err=false;
+  try{const as=await claude.use('assets');if(!as)throw 0;for(let k=0;k<fs.length;k++){if(!S.d||!S.d[i])throw 0;if(m)m.textContent='圖片上傳中…（'+(k+1)+'/'+fs.length+'）';const u=await as.upload(await shrink(fs[k]));const r=S.d[i];r[key]=asImgs(r[key]).concat([u.id])}}catch(x){err=true}
+  t.value='';render();if(err){const msg=box.querySelector('.lmsg');if(msg)msg.textContent='圖片上傳失敗，請確認有編輯權限'}});
+ S.set=l=>{if(!S.d){S.L=normList(cl(l));render()}};S.render=render;return S}
 const AM0=()=>['吹風機','毛巾','浴巾','牙刷牙膏','洗髮沐浴乳','拖鞋','睡衣','電熱水壺','冰箱','洗衣機','Wi-Fi','暖氣'].map(n=>({n,has:false}));
 const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  def:()=>[{name:'',area:'北海道',cin:'2026-11-26',cout:'2026-11-29',tin:'',tout:'',addr:'',tel:'',bk:'',note:'',imgs:[],am:AM0()},{name:'',area:'東京',cin:'2026-11-29',cout:'2026-12-04',tin:'',tout:'',addr:'',tel:'',bk:'',note:'',imgs:[],am:AM0()}],
@@ -820,17 +824,18 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  box.addEventListener('click',e=>{if(e.target.closest('[data-a="viewall"]')&&typeof openSec==='function')openSec('s-stay',true)});
 })();
 const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:true,
+ groups:[['imgs','新增穿搭照（可多張，不會覆蓋）']],
  def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,place:'',temp:'',note:'',imgs:[]})),
  blank:()=>({date:'',place:'',temp:'',note:'',imgs:[]}),
  fields:[['date','日期','date','sm'],['place','地點／天氣','text',''],['temp','氣溫','text','sm'],['note','穿搭說明','ta']],
- clean:L=>[...L].sort((a,b)=>String(a.date).localeCompare(String(b.date))),
+ clean:L=>[...L].map(r=>({...r,imgs:asImgs(r.imgs)})).sort((a,b)=>String(a.date).localeCompare(String(b.date))),
  view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';return `<div class="card" style="margin-bottom:14px"><div class="dayhead"><h3 style="font-size:20px">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''}</h3><span>${r.temp?`<span class="badge">${esc(r.temp)}</span> `:''}${r.place?`<span class="badge">${esc(r.place)}</span>`:''}</span></div>${OOTD.thumbs(r)||'<div class="tbd">尚未上傳穿搭照</div>'}${r.note?`<div style="white-space:pre-wrap">${esc(r.note)}</div>`:''}</div>`}});
 const JNL=mkList({box:'jnl',doc:'journal',title:'旅途手記',noun:'一天',big:true,
  groups:[['stubs','票根／紀念章照片（可多選）'],['imgs','今日相片（可多選）']],
  def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,weather:'',temp:'',hl:'',hlnote:'',surprise:'',mood:'',stubs:[],imgs:[]})),
  blank:()=>({date:'',weather:'',temp:'',hl:'',hlnote:'',surprise:'',mood:'',stubs:[],imgs:[]}),
  fields:[['date','日期','date','sm'],['weather','天氣','text','','例如：下雪、晴、陰'],['temp','氣溫','text','','例如：-3°C ~ 2°C'],['hl','今日最喜歡的地方或美食（Top Highlight）','text','','例如：二條市場的海膽丼'],['hlnote','為什麼最喜歡？','ta','','味道、畫面、當下的感覺…'],['surprise','今天最意外的驚喜是…','ta','','寫下沒有預料到的小確幸…'],['mood','心情小語（想對今天的自己說）','ta','','今天的我，覺得…']],
- clean:L=>[...L].sort((a,b)=>String(a.date).localeCompare(String(b.date))),
+ clean:L=>[...L].map(r=>({...r,stubs:asImgs(r.stubs),imgs:asImgs(r.imgs)})).sort((a,b)=>String(a.date).localeCompare(String(b.date))),
  view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';
   return `<div class="card" style="margin-bottom:16px"><div class="dayhead"><h3 style="font-size:20px">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''}</h3><span>${r.weather?`<span class="badge">${esc(r.weather)}</span> `:''}${r.temp?`<span class="badge">${esc(r.temp)}</span>`:''}</span></div>
 <div class="jb"><div class="jl">★ TOP HIGHLIGHT · 今日最喜歡</div>${r.hl?`<div class="jh">${esc(r.hl)}</div>`:'<div class="tbd">今天最喜歡的地方或美食是…</div>'}${r.hlnote?`<div style="color:var(--mute);white-space:pre-wrap">${esc(r.hlnote)}</div>`:''}</div>
