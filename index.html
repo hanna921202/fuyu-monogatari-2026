@@ -76,13 +76,14 @@ textarea{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);b
 .sp{padding:0;overflow:hidden}.sp img,.sp .ph{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--bg2)}
 .sp img{cursor:zoom-in}
 .sp .ph{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--acc)}
-.sp-media{position:relative}
+.sp-media{position:relative;overflow:hidden}
 .sp-rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .sp-rail::-webkit-scrollbar{display:none;width:0;height:0}
-.sp-rail img{flex:0 0 100%;width:100%;max-width:100%;scroll-snap-align:start}
-.sp-dots{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:5px;pointer-events:none}
+.sp-rail img{flex:0 0 100%;width:100%;max-width:100%;aspect-ratio:4/3;object-fit:cover;scroll-snap-align:start;display:block;background:var(--bg2);cursor:zoom-in}
+.sp-dots{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:5px;pointer-events:none;z-index:1}
 .sp-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.42);box-shadow:0 0 0 1px rgba(20,40,70,.18)}
 .sp-dots i.on{background:#fff}
+.jb .sp-media{border-radius:12px;margin-top:6px}
 .sp .sb{padding:12px 16px 14px}.sp .n{font-weight:600}.sp .m{font-size:13px;color:var(--mute)}.sp .nt{font-size:13px;margin-top:4px;white-space:pre-wrap}
 .sp.got .n{text-decoration:line-through;opacity:.6}.sp.got img{opacity:.55}
 .ck{display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:13px;color:var(--ink)}input[type=checkbox]{display:inline-block;width:auto;margin:0}
@@ -497,19 +498,19 @@ function itineraryImgMap(){
 function spotNameFix(n){return n==='\u8386\u7530'?'\u84b2\u7530':n}
 function fillSpotImg(s){
  const name=spotNameFix(String(s.name||'').trim());
- const base={...s,name};
- if(base.img)return base;
+ let imgs=itemImgs(s);
+ if(imgs.length)return {...s,name,imgs,img:imgs[0]||''};
  const map=itineraryImgMap();
- if(map[name])return {...base,img:map[name]};
- const hit=Object.keys(map).find(k=>name.includes(k)||k.includes(name));
- return hit?{...base,img:map[hit]}:base;
+ const key=map[name]?name:Object.keys(map).find(k=>name.includes(k)||k.includes(name));
+ if(key&&map[key]){imgs=[map[key]];return {...s,name,imgs,img:imgs[0]}}
+ return {...s,name,imgs:[],img:''};
 }
 function refreshSpotImgs(){
  if(eW||eWCat||eWSpot)return false;
  let ch=false;
  WSPOTS=WSPOTS.map(s=>{
-  const n=fillSpotImg({...s,img:s.img||''});
-  if(n.img!==s.img||n.name!==s.name)ch=true;
+  const n=fillSpotImg(s);
+  if(n.img!==s.img||n.name!==s.name||JSON.stringify(itemImgs(n))!==JSON.stringify(itemImgs(s)))ch=true;
   return n;
  });
  return ch;
@@ -553,17 +554,17 @@ const wRegionOf=r=>{const c=String(r||'').trim();return WCATS.includes(c)?c:(WCA
 const spotsIn=region=>WSPOTS.filter(s=>s.region===wRegionOf(region));
 const shopsIn=(region,spot)=>WL.map((x,i)=>[x,i]).filter(([x])=>x.region===region&&x.spot===spot);
 async function saveWish(extra){const payload=Object.assign({regions:WCATS,spots:WSPOTS,list:WL,cats:WCATS},extra||{});await db.collection('trip').doc('wishes').set(payload)}
-function wishCard(x,compact){const src=blobSrc(x.img);return `<div class="card sp">${src?`<img class="zoom" src="${src}" alt="${esc(x.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.date,x.addr,x.hours].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}</div></div>`}
-function spotCard(s){const n=shopsIn(s.region,s.name).length;const src=blobSrc(s.img);return `<div class="card sp">${src?`<img class="zoom" src="${src}" alt="${esc(s.name)}" loading="lazy">`:`<div class="ph" style="aspect-ratio:4/3;font-size:15px;letter-spacing:.12em">${esc(s.name)}</div>`}<div class="sb"><div class="n">${esc(s.name)}</div><div class="m">${n?n+' 間商店':'尚未加入商店'}</div></div></div>`}
-function startEditShops(region,spot){wEditRegion=region;wEditSpot=spot;wRegion=region;wSpot=spot;dW=cl(WL.filter(x=>x.region===region&&x.spot===spot));eW=true;eWCat=false;eWSpot=false;renderWish()}
-function startEditSpots(region){wEditRegion=region;wRegion=region;dWSpot=cl(spotsIn(region).map(s=>({name:s.name,img:s.img||''})));eWSpot=true;eW=false;eWCat=false;renderWish()}
+function wishCard(x,compact){return `<div class="card sp">${mediaRail(itemImgs(x),x.name)}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.date,x.addr,x.hours].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}</div></div>`}
+function spotCard(s){const n=shopsIn(s.region,s.name).length,ids=itemImgs(s);return `<div class="card sp">${ids.length?mediaRail(ids,s.name):`<div class="ph" style="font-size:15px;letter-spacing:.12em">${esc(s.name)}</div>`}<div class="sb"><div class="n">${esc(s.name)}</div><div class="m">${n?n+' 間商店':'尚未加入商店'}</div></div></div>`}
+function startEditShops(region,spot){wEditRegion=region;wEditSpot=spot;wRegion=region;wSpot=spot;dW=cl(WL.filter(x=>x.region===region&&x.spot===spot)).map(x=>({...x,imgs:itemImgs(x)}));eW=true;eWCat=false;eWSpot=false;renderWish()}
+function startEditSpots(region){wEditRegion=region;wRegion=region;dWSpot=cl(spotsIn(region).map(s=>({name:s.name,imgs:itemImgs(s)})));eWSpot=true;eW=false;eWCat=false;renderWish()}
 function renderFlights(){
  if(!eF){flBox.innerHTML=`<div class="flights">${FL.map(f=>`<div class="card fl"><div class="d">${esc(f.date)}<small class="dw">${esc(toJpW(f.w))}</small></div><div class="r">${esc(f.from)}<i aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M10.18 9 5.78 2.23A1 1 0 0 0 4.93 1.76H3.66a1 1 0 0 0-.86 1.5L6.2 9H3.5L2.15 7.35a.5.5 0 0 0-.4-.2H.8a.5.5 0 0 0-.4.8L2.2 11 .4 13.85a.5.5 0 0 0 .4.8h.95a.5.5 0 0 0 .4-.2L3.5 13h2.7l-3.4 5.5a1 1 0 0 0 .86 1.5h1.27a1 1 0 0 0 .85-.47L10.18 13H21a2 2 0 1 0 0-4H10.18z"/></svg></i>${esc(f.to)}</div>${f.airline||f.no?`<div class="no">${esc(f.airline)} ${esc(f.no)}</div>`:''}${f.dep||f.arr?`<div class="tm">${esc(f.dep||'--:--')} → ${esc(f.arr||'--:--')}</div>`:''}${f.note?`<div class="nt">${esc(f.note)}</div>`:''}</div>`).join('')}</div>${canEdit?'<button class="btn" data-a="edit">✎ 編輯航班</button>':''}`;return}
  flBox.innerHTML=`<div class="banner">後台編輯模式 · 航班</div>${dF.map((f,i)=>`<div class="item" data-i="${i}"><div class="row">${FF.map(([k,l,c])=>`<label class="${c}">${l}<input data-f="${k}" value="${esc(f[k])}"></label>`).join('')}</div><label>備註<textarea data-f="note">${esc(f.note)}</textarea></label><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增航班</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="fmsg"></span></div>`}
 function renderWish(){
  if(eWCat){wsBox.innerHTML=`<div class="banner">編輯大標籤（地區）</div>${dWCat.map((c,i)=>`<div class="item" data-i="${i}"><div class="row"><label>地區名稱<input data-f="catname" value="${esc(c)}"></label></div><div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="delcat">刪除</button></div></div>`).join('')}<button class="btn" data-a="addcat">＋ 新增地區</button><div class="bar"><button class="btn pri" data-a="savecat">儲存</button><button class="btn" data-a="cancelcat">取消</button><span id="wmsg"></span></div>`;return}
- if(eWSpot){const reg=wEditRegion||'地區';wsBox.innerHTML=`<div class="banner">編輯「${esc(reg)}」景點小標籤</div>${dWSpot.map((s,i)=>{const src=blobSrc(s.img);return `<div class="item" data-i="${i}"><div class="row"><label>景點名稱<input data-f="spotname" value="${esc(s.name)}"></label></div>${src?`<img class="pv zoom" src="${src}" alt="">`:''}<label>${s.img?'更換圖片':'上傳圖片'}<input type="file" accept="image/*" data-up="spot"></label><div class="ctl">${s.img?'<button class="btn s" data-a="rmspotimg">移除圖片</button>':''}<button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="delspot">刪除</button></div></div>`}).join('')}<button class="btn" data-a="addspot">＋ 新增景點</button><div class="bar"><button class="btn pri" data-a="savespot">儲存</button><button class="btn" data-a="cancelspot">取消</button><span id="wmsg"></span></div>`;return}
- if(eW){const title=`${wEditRegion} · ${wEditSpot}`;wsBox.innerHTML=`<div class="banner">編輯「${esc(title)}」商店</div>${dW.map((x,i)=>{const src=blobSrc(x.img);return `<div class="item" data-i="${i}"><div class="row"><label>商店／店名<input data-f="name" value="${esc(x.name)}"></label><label class="sm">日期<input data-f="date" value="${esc(x.date)}" placeholder="11/26"></label></div><div class="row"><label>地址<input data-f="addr" value="${esc(x.addr)}" placeholder="例：景點內 B1…"></label><label>營業時間<input data-f="hours" value="${esc(x.hours)}" placeholder="例：10:00–18:00"></label></div><label>備註<textarea data-f="note">${esc(x.note)}</textarea></label>${src?`<img class="pv" src="${src}" alt="">`:''}<label>${x.img?'更換圖片':'上傳圖片'}<input type="file" accept="image/*" data-up="1"></label><div class="ctl">${x.img?'<button class="btn s" data-a="rmimg">移除圖片</button>':''}<button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`}).join('')}<button class="btn" data-a="add">＋ 新增商店</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="wmsg"></span></div>`;return}
+ if(eWSpot){const reg=wEditRegion||'地區';wsBox.innerHTML=`<div class="banner">編輯「${esc(reg)}」景點小標籤</div>${dWSpot.map((s,i)=>`<div class="item" data-i="${i}"><div class="row"><label>景點名稱<input data-f="spotname" value="${esc(s.name)}"></label></div>${editImgsUI(itemImgs(s),'spot')}<div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="delspot">刪除</button></div></div>`).join('')}<button class="btn" data-a="addspot">＋ 新增景點</button><div class="bar"><button class="btn pri" data-a="savespot">儲存</button><button class="btn" data-a="cancelspot">取消</button><span id="wmsg"></span></div>`;return}
+ if(eW){const title=`${wEditRegion} · ${wEditSpot}`;wsBox.innerHTML=`<div class="banner">編輯「${esc(title)}」商店</div>${dW.map((x,i)=>`<div class="item" data-i="${i}"><div class="row"><label>商店／店名<input data-f="name" value="${esc(x.name)}"></label><label class="sm">日期<input data-f="date" value="${esc(x.date)}" placeholder="11/26"></label></div><div class="row"><label>地址<input data-f="addr" value="${esc(x.addr)}" placeholder="例：景點內 B1…"></label><label>營業時間<input data-f="hours" value="${esc(x.hours)}" placeholder="例：10:00–18:00"></label></div><label>備註<textarea data-f="note">${esc(x.note)}</textarea></label>${editImgsUI(itemImgs(x),'shop')}<div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增商店</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="wmsg"></span></div>`;return}
  if(wView==='spot'&&wRegion&&wSpot){
   const L=shopsIn(wRegion,wSpot);
   wsBox.innerHTML=`<div class="shhead"><button class="shback" type="button" data-a="backspot">← ${esc(wRegion)}</button><div class="sub2" style="margin:0">${esc(wSpot)} · ${L.length} 間</div></div>
@@ -599,9 +600,10 @@ wsBox.addEventListener('input',e=>{const f=e.target.dataset.f,it=e.target.closes
  if(eWSpot&&f==='spotname'&&it){dWSpot[+it.dataset.i].name=e.target.value;return}
  if(!eW||!f||!it)return;dW[+it.dataset.i][f]=e.target.value});
 wsBox.addEventListener('change',async e=>{const t=e.target;
- if(t.dataset.up&&t.files[0]){const i=+t.closest('.item').dataset.i,m=document.getElementById('wmsg');m.textContent='圖片上傳中…';
-  try{const as=await claude.use('assets');if(!as)throw 0;const r=await as.upload(await shrink(t.files[0]));
-   if(t.dataset.up==='spot'&&eWSpot)dWSpot[i].img=r.id;else if(eW)dW[i].img=r.id;renderWish()}catch(err){m.textContent='圖片上傳失敗，請確認有編輯權限'}}});
+ if(t.dataset.up&&t.files.length&&(eW||eWSpot)){const i=+t.closest('.item').dataset.i,m=document.getElementById('wmsg'),fs=[...t.files];let err=false;
+  try{const as=await claude.use('assets');if(!as)throw 0;for(let k=0;k<fs.length;k++){if(m)m.textContent='圖片上傳中…（'+(k+1)+'/'+fs.length+'）';const r=await as.upload(await shrink(fs[k]));
+   if(t.dataset.up==='spot'&&eWSpot){dWSpot[i].imgs=itemImgs(dWSpot[i]).concat([r.id]);dWSpot[i].img=''}else if(eW){dW[i].imgs=itemImgs(dW[i]).concat([r.id]);dW[i].img=''}}}catch(x){err=true}
+  t.value='';renderWish();if(err){const msg=document.getElementById('wmsg');if(msg)msg.textContent='圖片上傳失敗，請確認有編輯權限'}}});
 wsBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,it=t.closest('.item'),i=it?+it.dataset.i:-1;
  if(a==='viewregion'){wView='region';wRegion=t.dataset.region||'';wSpot='';return renderWish()}
  if(a==='viewspot'){wView='spot';wRegion=t.dataset.region||'';wSpot=t.dataset.spot||'';return renderWish()}
@@ -622,24 +624,24 @@ wsBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if
   return renderWish()}
  if(a==='editspots'){return startEditSpots(t.dataset.region||wRegion||WCATS[0])}
  if(a==='cancelspot'){eWSpot=false;dWSpot=null;return renderWish()}
- if(a==='addspot'){dWSpot.push({name:'新景點',img:''});return renderWish()}
+ if(a==='addspot'){dWSpot.push({name:'新景點',imgs:[]});return renderWish()}
  if(a==='delspot'&&eWSpot){dWSpot.splice(i,1);return renderWish()}
- if(a==='rmspotimg'&&eWSpot){dWSpot[i].img='';return renderWish()}
+ if(a==='rmimg'&&eWSpot&&t.dataset.g==='spot'){dWSpot[i].imgs=itemImgs(dWSpot[i]);dWSpot[i].imgs.splice(+t.dataset.p,1);dWSpot[i].img='';return renderWish()}
  if(a==='savespot'){const m=document.getElementById('wmsg');m.textContent='儲存中…';
   const reg=wEditRegion||WCATS[0];
-  const cleaned=dWSpot.map(x=>({name:String(x.name||'').trim(),img:x.img||''})).filter(x=>x.name);
+  const cleaned=dWSpot.map(x=>{const imgs=itemImgs(x);return{name:String(x.name||'').trim(),imgs,img:imgs[0]||''}}).filter(x=>x.name);
   const seen=new Set();const uniq=[];cleaned.forEach(x=>{if(seen.has(x.name))return;seen.add(x.name);uniq.push(x)});
   const old=spotsIn(reg);
   const renameSpot=n=>{if(uniq.some(u=>u.name===n))return n;const idx=old.findIndex(s=>s.name===n);return idx>=0&&uniq[idx]?uniq[idx].name:(uniq[0]&&uniq[0].name||'')};
-  WSPOTS=WSPOTS.filter(s=>s.region!==reg).concat(uniq.map(x=>({region:reg,name:x.name,img:x.img||''})));
+  WSPOTS=WSPOTS.filter(s=>s.region!==reg).concat(uniq.map(x=>({region:reg,name:x.name,imgs:x.imgs,img:x.img})));
   WL=WL.map(x=>{if(x.region!==reg)return x;const spot=renameSpot(x.spot);return spot?{...x,spot}:null}).filter(Boolean);
   try{await saveWish();eWSpot=false;dWSpot=null;wView='region';wRegion=reg}catch(err){m.textContent='儲存失敗';return}
   return renderWish()}
  if(a==='editshops'){return startEditShops(t.dataset.region||wRegion,t.dataset.spot||wSpot)}
  if(a==='cancel'){eW=false;dW=null;return renderWish()}
- else if(a==='add')dW.push({name:'',region:wEditRegion,spot:wEditSpot,date:'',addr:'',hours:'',note:'',img:''});
+ else if(a==='add')dW.push({name:'',region:wEditRegion,spot:wEditSpot,date:'',addr:'',hours:'',note:'',imgs:[]});
  else if(a==='del'&&eW)dW.splice(i,1);
- else if(a==='rmimg'&&eW)dW[i].img='';
+ else if(a==='rmimg'&&eW){dW[i].imgs=itemImgs(dW[i]);dW[i].imgs.splice(+t.dataset.p,1);dW[i].img=''}
  else if(a==='up'&&eW&&i>0)[dW[i-1],dW[i]]=[dW[i],dW[i-1]];
  else if(a==='up'&&eWCat&&i>0)[dWCat[i-1],dWCat[i]]=[dWCat[i],dWCat[i-1]];
  else if(a==='up'&&eWSpot&&i>0)[dWSpot[i-1],dWSpot[i]]=[dWSpot[i],dWSpot[i-1]];
@@ -649,12 +651,17 @@ wsBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if
  else if(a==='save'&&eW){const m=document.getElementById('wmsg');m.textContent='儲存中…';
   const region=wEditRegion,spot=wEditSpot;
   const rest=WL.filter(x=>!(x.region===region&&x.spot===spot));
-  const next=dW.map(x=>({name:String(x.name||'').trim(),region,spot,date:String(x.date||'').trim(),addr:String(x.addr||'').trim(),hours:String(x.hours||'').trim(),note:String(x.note||'').trim(),img:x.img||''})).filter(x=>x.name);
+  const next=dW.map(x=>{const imgs=itemImgs(x);return{name:String(x.name||'').trim(),region,spot,date:String(x.date||'').trim(),addr:String(x.addr||'').trim(),hours:String(x.hours||'').trim(),note:String(x.note||'').trim(),imgs,img:imgs[0]||''}}).filter(x=>x.name);
   WL=rest.concat(next);
   try{await saveWish();eW=false;dW=null;wView='spot';wRegion=region;wSpot=spot}catch(err){m.textContent='儲存失敗，請確認有編輯權限';return}}
  renderWish()});
 function asList(v){if(Array.isArray(v))return v;if(v&&typeof v==='object')return Object.keys(v).sort((a,b)=>a-b).map(k=>v[k]).filter(x=>x&&typeof x==='object');return[]}
 function asImgs(v){if(!v)return[];if(Array.isArray(v))return v.map(String).filter(Boolean);if(typeof v==='string')return v?[v]:[];if(typeof v==='object')return Object.keys(v).sort((a,b)=>a-b).map(k=>v[k]).map(String).filter(Boolean);return[]}
+function itemImgs(x){const a=asImgs(x&&x.imgs);return a.length?a:asImgs(x&&x.img)}
+function mediaRail(ids,alt,empty){const ok=(ids||[]).map(String).filter(id=>blobSrc(id));if(!ok.length)return empty!==undefined?empty:'<div class="ph">❄</div>';return `<div class="sp-media"><div class="sp-rail">${ok.map(id=>`<img class="zoom" src="${blobSrc(id)}" alt="${esc(alt||'')}" loading="lazy">`).join('')}</div>${ok.length>1?`<div class="sp-dots">${ok.map((_,k)=>`<i${k===0?' class="on"':''}></i>`).join('')}</div>`:''}</div>`}
+function editImgsUI(ids,up){const L=asImgs(ids);return `<div class="pvs">${L.map((id,k)=>`<span class="pvw"><img class="pvd" src="${blobSrc(id)}" alt=""><button class="btn s del" data-a="rmimg" data-g="${up}" data-p="${k}">✕</button></span>`).join('')}</div><label>新增圖片（可多張，不會覆蓋）<input type="file" accept="image/*" multiple data-up="${up}"></label>`}
+function syncMediaDots(rail){const dots=rail.parentElement&&rail.parentElement.querySelector('.sp-dots');if(!dots)return;const w=rail.clientWidth||1,i=Math.round(rail.scrollLeft/w);[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i))}
+document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('sp-rail'))syncMediaDots(t)},true);
 function watchTrip(){db.collection('trip').onSnapshot(sn=>{sn.docs.forEach(doc=>{const v=doc.data()||{};
  if(doc.id==='flights'&&v.list!=null&&!eF)FL=cl(asList(v.list));
  if(doc.id==='wishes'&&!eW&&!eWCat&&!eWSpot){const n=normWish(v);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}
@@ -664,10 +671,10 @@ let SH=[],eS=false,dS=null,eCat=false,dCat=null,shView='home',shFocus='',shEditC
 let CATS=['美食','美妝','電玩','其他'];
 const catOf=x=>{const c=String(x&&x.cat||'').trim();return CATS.includes(c)?c:(CATS[CATS.length-1]||'其他')};
 const shBox=document.getElementById('shop'),IMG=id=>blobSrc(id);
-const shopImgs=x=>asImgs(x&&x.imgs).length?asImgs(x.imgs):asImgs(x&&x.img);
+const shopImgs=itemImgs;
 function normShopItem(x){const o={...x,imgs:shopImgs(x)};delete o.img;return o}
 async function saveShop(extra){const payload=Object.assign({list:SH.map(normShopItem),cats:CATS},extra||{});await db.collection('trip').doc('shopping').set(payload)}
-function shopCard(x,i,compact){const ids=shopImgs(x).filter(id=>IMG(id));const media=ids.length?`<div class="sp-media"><div class="sp-rail">${ids.map(id=>`<img class="zoom" src="${IMG(id)}" alt="${esc(x.name)}" loading="lazy">`).join('')}</div>${ids.length>1?`<div class="sp-dots">${ids.map((_,k)=>`<i${k===0?' class="on"':''}></i>`).join('')}</div>`:''}</div>`:'<div class="ph">❄</div>';return `<div class="card sp${x.bought?' got':''}">${media}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
+function shopCard(x,i,compact){return `<div class="card sp${x.bought?' got':''}">${mediaRail(shopImgs(x),x.name)}<div class="sb"><div class="n">${esc(x.name)||'（未命名）'}</div><div class="m">${esc([x.store,x.price].filter(Boolean).join(' · '))}</div>${!compact&&x.note?`<div class="nt">${esc(x.note)}</div>`:''}${canEdit?`<label class="ck"><input type="checkbox" class="tog" data-i="${i}" ${x.bought?'checked':''}> 已購買</label>`:x.bought?'<div class="badge">已購買</div>':''}</div></div>`}
 function startEditCat(cat){shEditCat=cat||(CATS[0]||'其他');shFocus=shEditCat;dS=cl(SH.filter(x=>catOf(x)===shEditCat)).map(normShopItem);eS=true;eCat=false;renderShop()}
 function renderShop(){
  const done=SH.filter(x=>x.bought).length;
@@ -686,8 +693,6 @@ function renderShop(){
     <div class="bar" style="margin-top:4px">${canEdit?`<button class="btn s" data-a="edit" data-cat="${esc(c)}">✎ 編輯</button>`:''}<button class="more" type="button" data-a="viewcat" data-cat="${esc(c)}">查看所有商品 →</button></div></div>`}).join('')}`;
 }
 function shrink(file){return new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(),'image/jpeg',.82)};im.onerror=rej;im.src=u})}
-function syncShopDots(rail){const dots=rail.parentElement&&rail.parentElement.querySelector('.sp-dots');if(!dots)return;const w=rail.clientWidth||1,i=Math.round(rail.scrollLeft/w);[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i))}
-shBox.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('sp-rail'))syncShopDots(t)},true);
 shBox.addEventListener('input',e=>{const f=e.target.dataset.f,it=e.target.closest('.item');
  if(eCat&&f==='catname'&&it){dCat[+it.dataset.i]=e.target.value;return}
  if(!eS||!f||!it)return;dS[+it.dataset.i][f]=e.target.type==='checkbox'?e.target.checked:e.target.value});
@@ -787,7 +792,7 @@ function mkList(c){
  const imgKeys=()=>(c.groups||[['imgs']]).map(g=>g[0]);
  const normRow=r=>{const o={...r};imgKeys().forEach(k=>{o[k]=asImgs(o[k])});return o};
  const normList=L=>(L||[]).map(normRow);
- S.thumbs=(r,k='imgs',x=c.big?'big':'')=>{const ids=asImgs(r[k]).filter(id=>blobSrc(id));return ids.length?`<div class="thumbs">${ids.map(id=>`<img class="ti ${x}" src="${blobSrc(id)}" alt="" loading="lazy">`).join('')}</div>`:''};
+ S.thumbs=(r,k='imgs',empty)=>{return mediaRail(asImgs(r[k]),'',empty)};
  function render(){
   if(!S.d){box.innerHTML=S.L.map(c.view).join('')+(canEdit?`<button class="btn" data-a="edit">✎ 編輯${c.title}</button>`:'');return}
   box.innerHTML=`<div class="banner">後台編輯模式 · ${c.title}</div>${S.d.map((r,i)=>`<div class="item" data-i="${i}"><div class="row">${c.fields.filter(f=>f[2]!=='ta').map(([k,l,t,w,ph])=>`<label class="${w}">${l}<input type="${t}" data-f="${k}" value="${esc(r[k])}" placeholder="${esc(ph||'')}"></label>`).join('')}</div>${c.fields.filter(f=>f[2]==='ta').map(([k,l,_,__,ph])=>`<label>${l}<textarea data-f="${k}" placeholder="${esc(ph||'')}">${esc(r[k])}</textarea></label>`).join('')}${(c.groups||[['imgs','新增照片（可多張，不會覆蓋）']]).map(([gk,gl])=>`<div class="pvs">${asImgs(r[gk]).map((id,k)=>`<span class="pvw"><img class="pvd" src="${blobSrc(id)}" alt=""><button class="btn s del" data-a="rmimg" data-g="${gk}" data-p="${k}">✕</button></span>`).join('')}</div><label>${gl}<input type="file" accept="image/*" multiple data-up="${gk}"></label>`).join('')}${c.extraEd?c.extraEd(r):''}<div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增${c.noun}</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span class="lmsg" style="font-size:13px;color:var(--mute)"></span></div>`}
@@ -817,16 +822,15 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  extraIn:(t,r)=>{const m=t.closest('.amr');if(!m)return;const a=r.am[+m.dataset.m];if(t.dataset.mf==='has')a.has=t.checked;else if(t.dataset.mf==='n')a.n=t.value},
  extraClk:(a,t,r)=>{if(a==='addam')r.am.push({n:'',has:false});else if(a==='delam')r.am.splice(+t.closest('.amr').dataset.m,1)},
  view:r=>{const n=r.cin&&r.cout?Math.round((new Date(r.cout)-new Date(r.cin))/864e5):0,dd=s=>s?s.slice(5).replace('-','/'):'';
-  return `<div class="card" style="margin-bottom:14px"><div class="dayhead"><h3 style="font-size:19px">${esc(r.name)||'（尚未填寫住宿名稱）'}</h3>${r.area?`<span class="badge">${esc(r.area)}</span>`:''}</div><div style="color:var(--mute)">${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}${r.tin?'　入住 '+esc(r.tin):''}${r.tout?'　退房 '+esc(r.tout):''}</div>${r.addr?`<div>📍 ${esc(r.addr)}</div>`:''}${r.tel?`<div>☎ ${esc(r.tel)}</div>`:''}${r.bk?`<div>訂單編號：${esc(r.bk)}</div>`:''}${STAY.thumbs(r)}${(r.am||[]).length?`<div class="chips" style="margin-top:8px">${r.am.map(a=>`<span class="${a.has?'am on':'am'}">${a.has?'✓':'✕'} ${esc(a.n)}</span>`).join('')}</div>`:''}${r.note?`<div style="white-space:pre-wrap;margin-top:10px">${esc(r.note)}</div>`:''}</div>`}});
+  return `<div class="card sp" style="margin-bottom:14px">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="dayhead"><h3 style="font-size:19px">${esc(r.name)||'（尚未填寫住宿名稱）'}</h3>${r.area?`<span class="badge">${esc(r.area)}</span>`:''}</div><div style="color:var(--mute)">${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}${r.tin?'　入住 '+esc(r.tin):''}${r.tout?'　退房 '+esc(r.tout):''}</div>${r.addr?`<div>📍 ${esc(r.addr)}</div>`:''}${r.tel?`<div>☎ ${esc(r.tel)}</div>`:''}${r.bk?`<div>訂單編號：${esc(r.bk)}</div>`:''}${(r.am||[]).length?`<div class="chips" style="margin-top:8px">${r.am.map(a=>`<span class="${a.has?'am on':'am'}">${a.has?'✓':'✕'} ${esc(a.n)}</span>`).join('')}</div>`:''}${r.note?`<div style="white-space:pre-wrap;margin-top:10px">${esc(r.note)}</div>`:''}</div></div>`}});
 (()=>{const full=STAY.render,box=document.getElementById('stay'),dd=s=>s?s.slice(5).replace('-','/'):'';
  STAY.render=function(){
   if(STAY.d)return full();
   if(typeof curSec!=='undefined'&&curSec==='home'){
    const cards=STAY.L.length?STAY.L.map(r=>{
-    const img=(r.imgs||[]).map(id=>blobSrc(id)).find(Boolean);
     const n=r.cin&&r.cout?Math.round((new Date(r.cout)-new Date(r.cin))/864e5):0;
     const meta=[r.area,r.cin||r.cout?`${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}`:''].filter(Boolean).join(' · ');
-    return `<div class="card sp">${img?`<img class="zoom" src="${img}" alt="${esc(r.name)}" loading="lazy">`:'<div class="ph">❄</div>'}<div class="sb"><div class="n">${esc(r.name)||'（尚未填寫住宿名稱）'}</div><div class="m">${esc(meta)}</div></div></div>`;
+    return `<div class="card sp">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="n">${esc(r.name)||'（尚未填寫住宿名稱）'}</div><div class="m">${esc(meta)}</div></div></div>`;
    }).join(''):'';
    box.innerHTML=`<div class="stay-home">${cards?`<div class="srow">${cards}</div>`:'<div class="card tbd" style="margin:0">尚未新增住宿</div>'}<div class="bar"><button class="more" type="button" data-a="viewall">查看所有住宿 →</button></div></div>`;
    return;
@@ -841,7 +845,7 @@ const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:
  blank:()=>({date:'',place:'',temp:'',note:'',imgs:[]}),
  fields:[['date','日期','date','sm'],['place','地點／天氣','text',''],['temp','氣溫','text','sm'],['note','穿搭說明','ta']],
  clean:L=>[...L].map(r=>({...r,imgs:asImgs(r.imgs)})).sort((a,b)=>String(a.date).localeCompare(String(b.date))),
- view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';return `<div class="card" style="margin-bottom:14px"><div class="dayhead"><h3 style="font-size:20px">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''}</h3><span>${r.temp?`<span class="badge">${esc(r.temp)}</span> `:''}${r.place?`<span class="badge">${esc(r.place)}</span>`:''}</span></div>${OOTD.thumbs(r)||'<div class="tbd">尚未上傳穿搭照</div>'}${r.note?`<div style="white-space:pre-wrap">${esc(r.note)}</div>`:''}</div>`}});
+ view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';return `<div class="card sp" style="margin-bottom:14px">${mediaRail(asImgs(r.imgs),'')}<div class="sb"><div class="dayhead"><h3 style="font-size:20px">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''}</h3><span>${r.temp?`<span class="badge">${esc(r.temp)}</span> `:''}${r.place?`<span class="badge">${esc(r.place)}</span>`:''}</span></div>${r.note?`<div style="white-space:pre-wrap">${esc(r.note)}</div>`:'<div class="tbd">尚未寫穿搭說明</div>'}</div></div>`}});
 const JNL=mkList({box:'jnl',doc:'journal',title:'旅途手記',noun:'一天',big:true,
  groups:[['stubs','票根／紀念章照片（可多選）'],['imgs','今日相片（可多選）']],
  def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,weather:'',temp:'',hl:'',hlnote:'',surprise:'',mood:'',stubs:[],imgs:[]})),
@@ -852,8 +856,8 @@ const JNL=mkList({box:'jnl',doc:'journal',title:'旅途手記',noun:'一天',big
   return `<div class="card" style="margin-bottom:16px"><div class="dayhead"><h3 style="font-size:20px">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''}</h3><span>${r.weather?`<span class="badge">${esc(r.weather)}</span> `:''}${r.temp?`<span class="badge">${esc(r.temp)}</span>`:''}</span></div>
 <div class="jb"><div class="jl">★ TOP HIGHLIGHT · 今日最喜歡</div>${r.hl?`<div class="jh">${esc(r.hl)}</div>`:'<div class="tbd">今天最喜歡的地方或美食是…</div>'}${r.hlnote?`<div style="color:var(--mute);white-space:pre-wrap">${esc(r.hlnote)}</div>`:''}</div>
 <div class="jb"><div class="jl">心情小語</div><div class="jq">今天最意外的驚喜是…</div>${r.surprise?`<div style="white-space:pre-wrap">${esc(r.surprise)}</div>`:'<div class="tbd">（還沒寫）</div>'}${r.mood?`<div class="jq" style="margin-top:8px">想對今天的自己說</div><div style="white-space:pre-wrap">${esc(r.mood)}</div>`:''}</div>
-<div class="jb"><div class="jl">紀念章 ／ 票根黏貼區</div>${JNL.thumbs(r,'stubs','')||'<div class="scrap">把今天的紀念章、票根拍照貼在這裡</div>'}</div>
-<div class="jb"><div class="jl">相片留白區</div>${JNL.thumbs(r,'imgs','big')||'<div class="scrap">留一格給今天最想記住的一張相片</div>'}</div></div>`}});
+<div class="jb"><div class="jl">紀念章 ／ 票根黏貼區</div>${mediaRail(asImgs(r.stubs),'','<div class="scrap">把今天的紀念章、票根拍照貼在這裡</div>')}</div>
+<div class="jb"><div class="jl">相片留白區</div>${mediaRail(asImgs(r.imgs),'','<div class="scrap">留一格給今天最想記住的一張相片</div>')}</div></div>`}});
 const LC=['餐飲','交通','住宿','購物','門票娛樂','其他'],PM=['現金','信用卡','西瓜卡','行動支付','其他'];
 const td=new Date().toISOString().slice(0,10);
 let LG={budget:0,list:[]},lEdit='',lDate=(td>='2026-11-26'&&td<='2026-12-04')?td:'2026-11-26',lCur='JPY',lMsg='',lUndo=null;
