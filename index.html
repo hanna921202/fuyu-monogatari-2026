@@ -323,7 +323,7 @@ const DBKEY='fuyu-monogatari-v1';
 /* 共用雲端：任何人只要打開同一連結／捷徑，編輯會即時寫入 Firebase，無需貼權杖 */
 const FB_BASE='https://fuyu-monogatari-2026-default-rtdb.firebaseio.com';
 const FB_URL=FB_BASE+'/store.json';
-const FB_BLOB=id=>FB_BASE+'/blobs/'+encodeURIComponent(id)+'.json';
+const FB_BLOB=id=>FB_BASE+'/store/blobs/'+encodeURIComponent(id)+'.json';
 const listeners={};
 let STORE={},pushTimer=null,pullBusy=false,pushBusy=false,lastRemote='',syncStatus='',skipPullUntil=0,saveGen=0,booted=false;
 function loadLocal(){try{const x=JSON.parse(localStorage.getItem(DBKEY));return x&&typeof x==='object'?x:{}}catch(e){return {}}}
@@ -384,14 +384,14 @@ async function remotePush(opts){
  pushBusy=true;skipPullUntil=Date.now()+8000;
  try{if(!keepalive)setSync('儲存到雲端中…');
   STORE.meta=Object.assign({},STORE.meta||{},{updatedAt:new Date().toISOString(),by:deviceTag()});
-  /* 大圖改走 /blobs/{id}，主 store 只保留小圖以免把整包洗掉或撐爆 */
+  /* 主資料用 PATCH，避免整包 PUT 清掉 store/blobs；大圖改走 store/blobs/{id} */
   const payload=JSON.parse(JSON.stringify(STORE));
-  if(payload.blobs){Object.keys(payload.blobs).forEach(k=>{if(String(payload.blobs[k]).length>80000)delete payload.blobs[k]});if(!Object.keys(payload.blobs).length)delete payload.blobs}
-  const body=JSON.stringify(payload);saveLocal();lastRemote=body;
-  const r=await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body,cache:'no-store',keepalive});
+  delete payload.blobs;
+  const body=JSON.stringify(payload);saveLocal();
+  const r=await fetch(FB_URL,{method:'PATCH',headers:{'Content-Type':'application/json'},body,cache:'no-store',keepalive});
   if(!r.ok){const t=await r.text();throw new Error('寫入失敗 '+r.status+' '+(t||'').slice(0,80))}
   skipPullUntil=Date.now()+4000;
-  if(!keepalive){try{const chk=await fetch(FB_URL+'?t='+Date.now(),{cache:'no-store'});if(chk.ok){const got=await chk.text();if(got&&got!=='null'){lastRemote=got;const parsed=JSON.parse(got);if(storeStamp(parsed)<storeStamp(STORE)){/* keep memory */ }}}}catch(e){}
+  if(!keepalive){try{const chk=await fetch(FB_URL+'?t='+Date.now(),{cache:'no-store'});if(chk.ok){const got=await chk.text();if(got&&got!=='null')lastRemote=got}}catch(e){}
    setSync('已同步到雲端 · '+new Date().toLocaleTimeString(),true)}
   return true;
  }catch(e){setSync('儲存失敗：'+e.message,false);saveLocal();if(!keepalive)throw e;return false}
@@ -411,8 +411,9 @@ function shrinkTo(file,maxSide,quality){return new Promise((res,rej)=>{const im=
 async function compressForCloud(file){let side=900,q=.72,blob=file,dataUrl='';
  for(let i=0;i<7;i++){blob=await shrinkTo(file,side,q);dataUrl=await fileToDataUrl(blob);if(dataUrl.length<=100000)return{blob,dataUrl};side=Math.max(360,Math.round(side*.82));q=Math.max(.42,q-.08)}
  return{blob,dataUrl}}
-async function putCloudBlob(id,dataUrl){if(!id||!dataUrl)return false;try{const r=await fetch(FB_BLOB(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dataUrl),cache:'no-store'});return r.ok}catch(e){return false}}
-async function fetchCloudBlob(id){try{const r=await fetch(FB_BLOB(id)+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return '';const v=await r.json();return(typeof v==='string'&&v.indexOf('data:')===0)?v:''}catch(e){return ''}}
+const blobCloudOk=new Set();
+async function putCloudBlob(id,dataUrl){if(!id||!dataUrl)return false;if(blobCloudOk.has(id))return true;try{const r=await fetch(FB_BLOB(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dataUrl),cache:'no-store'});if(r.ok)blobCloudOk.add(id);return r.ok}catch(e){return false}}
+async function fetchCloudBlob(id){try{const r=await fetch(FB_BLOB(id)+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return '';const v=await r.json();if(typeof v==='string'&&v.indexOf('data:')===0){blobCloudOk.add(id);return v}return''}catch(e){return ''}}
 function rememberBlob(id,dataUrl,fileBlob){if(!id||!dataUrl)return;STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;blobMap[id]=dataUrl;if(fileBlob)idbPut(id,fileBlob).catch(()=>{})}
 async function uploadBlob(file){const id=(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).replace(/-/g,'');
  const{blob,dataUrl}=await compressForCloud(file);rememberBlob(id,dataUrl,blob);
@@ -434,10 +435,14 @@ async function dataUrlOf(id){if(STORE.blobs&&STORE.blobs[id]&&String(STORE.blobs
  const b=await idbGet(id);if(b){try{return await fileToDataUrl(b)}catch(e){}}
  return''}
 async function syncBlobsIn(){const missing=collectBlobIds().filter(id=>!blobSrc(id));if(!missing.length)return false;let got=false;
- await Promise.all(missing.map(async id=>{const dataUrl=await fetchCloudBlob(id);if(!dataUrl)return;let fileBlob=null;try{fileBlob=await(await fetch(dataUrl)).blob()}catch(e){}rememberBlob(id,dataUrl,fileBlob);got=true}));
+ const chunk=6;for(let i=0;i<missing.length;i+=chunk){await Promise.all(missing.slice(i,i+chunk).map(async id=>{const dataUrl=await fetchCloudBlob(id);if(!dataUrl)return;let fileBlob=null;try{fileBlob=await(await fetch(dataUrl)).blob()}catch(e){}rememberBlob(id,dataUrl,fileBlob);got=true}))}
  return got}
-async function syncBlobsOut(){for(const id of collectBlobIds()){const dataUrl=await dataUrlOf(id);if(!dataUrl)continue;STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;await putCloudBlob(id,dataUrl)}}
-async function refreshAllBlobs(){const inn=await syncBlobsIn();try{await syncBlobsOut()}catch(e){}if(inn&&typeof renderTrip==='function'){try{renderTrip()}catch(e){}}}
+async function syncBlobsOut(){const ids=collectBlobIds();let n=0;
+ for(const id of ids){if(blobCloudOk.has(id))continue;const dataUrl=await dataUrlOf(id);if(!dataUrl)continue;/* 先確認雲端是否已有，避免重複上傳 */const existed=await fetchCloudBlob(id);if(existed){rememberBlob(id,existed,null);continue}STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;if(await putCloudBlob(id,dataUrl))n++}
+ if(n)saveLocal();return n}
+async function refreshAllBlobs(){setSync('同步圖片中…');const inn=await syncBlobsIn();let out=0;try{out=await syncBlobsOut()}catch(e){}
+ if((inn||out)&&typeof renderTrip==='function'){try{renderTrip()}catch(e){}}
+ setSync(inn||out?('圖片已同步'+(out?' · 上傳 '+out+' 張':'')+(inn?' · 已補齊缺圖':'')):'雲端已連線 · 編輯會自動儲存',true)}
 const claude={async use(kind){if(kind==='user')return {canEdit(){return true}};if(kind==='db')return localDb;if(kind==='assets')return {upload:uploadBlob};return null}};
 /* 先載本機快取，避免重整空窗期；再與雲端比對 */
 STORE=loadLocal();
