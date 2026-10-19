@@ -76,10 +76,10 @@ textarea{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);b
 .sp{padding:0;overflow:hidden}.sp img,.sp .ph{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--bg2)}
 .sp img{cursor:zoom-in}
 .sp .ph{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--acc)}
-.sp-media{position:relative;overflow:hidden}
-.sp-rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.sp-media{position:relative;overflow:hidden;width:100%}
+.sp-rail{display:flex;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .sp-rail::-webkit-scrollbar{display:none;width:0;height:0}
-.sp-rail img{flex:0 0 100%;width:100%;max-width:100%;aspect-ratio:4/3;object-fit:cover;scroll-snap-align:start;display:block;background:var(--bg2);cursor:zoom-in}
+.sp-rail img{flex:0 0 100%;width:100%;min-width:100%;max-width:100%;box-sizing:border-box;aspect-ratio:4/3;object-fit:cover;scroll-snap-align:start;display:block;background:var(--bg2);cursor:zoom-in}
 .sp-dots{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:5px;pointer-events:none;z-index:1}
 .sp-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.42);box-shadow:0 0 0 1px rgba(20,40,70,.18)}
 .sp-dots i.on{background:#fff}
@@ -321,7 +321,9 @@ label{font-size:11px;margin-bottom:6px}
 
 const DBKEY='fuyu-monogatari-v1';
 /* 共用雲端：任何人只要打開同一連結／捷徑，編輯會即時寫入 Firebase，無需貼權杖 */
-const FB_URL='https://fuyu-monogatari-2026-default-rtdb.firebaseio.com/store.json';
+const FB_BASE='https://fuyu-monogatari-2026-default-rtdb.firebaseio.com';
+const FB_URL=FB_BASE+'/store.json';
+const FB_BLOB=id=>FB_BASE+'/blobs/'+encodeURIComponent(id)+'.json';
 const listeners={};
 let STORE={},pushTimer=null,pullBusy=false,pushBusy=false,lastRemote='',syncStatus='',skipPullUntil=0,saveGen=0,booted=false;
 function loadLocal(){try{const x=JSON.parse(localStorage.getItem(DBKEY));return x&&typeof x==='object'?x:{}}catch(e){return {}}}
@@ -371,6 +373,7 @@ async function remotePull(force){
   if(storeReady(STORE))adoptStore(mergeStore(remote,STORE),null);
   else adoptStore(remote,raw);
   setSync('已同步 · '+new Date().toLocaleTimeString(),true);
+  if(booted)refreshAllBlobs().catch(()=>{});
  }catch(e){if(!storeReady(STORE)){const loc=loadLocal();if(storeReady(loc))adoptStore(loc,null)}setSync('讀取失敗：'+e.message,false)}
  finally{pullBusy=false}}
 let pushChain=Promise.resolve();
@@ -380,9 +383,11 @@ async function remotePush(opts){
  if(pushBusy){if(keepalive)return false;await new Promise(r=>{const t=setInterval(()=>{if(!pushBusy){clearInterval(t);r()}},40);setTimeout(()=>{clearInterval(t);r()},10000)});if(pushBusy)return false}
  pushBusy=true;skipPullUntil=Date.now()+8000;
  try{if(!keepalive)setSync('儲存到雲端中…');
-  if(STORE.blobs){const keys=Object.keys(STORE.blobs);for(const k of keys){if(String(STORE.blobs[k]).length>120000)delete STORE.blobs[k]}}
   STORE.meta=Object.assign({},STORE.meta||{},{updatedAt:new Date().toISOString(),by:deviceTag()});
-  const body=JSON.stringify(STORE);saveLocal();lastRemote=body;
+  /* 大圖改走 /blobs/{id}，主 store 只保留小圖以免把整包洗掉或撐爆 */
+  const payload=JSON.parse(JSON.stringify(STORE));
+  if(payload.blobs){Object.keys(payload.blobs).forEach(k=>{if(String(payload.blobs[k]).length>80000)delete payload.blobs[k]});if(!Object.keys(payload.blobs).length)delete payload.blobs}
+  const body=JSON.stringify(payload);saveLocal();lastRemote=body;
   const r=await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body,cache:'no-store',keepalive});
   if(!r.ok){const t=await r.text();throw new Error('寫入失敗 '+r.status+' '+(t||'').slice(0,80))}
   skipPullUntil=Date.now()+4000;
@@ -398,12 +403,41 @@ const blobMap={};
 function blobSrc(id){if(!id)return '';if(blobMap[id])return blobMap[id];if(STORE.blobs&&STORE.blobs[id])return STORE.blobs[id];if(/[\/.]/.test(id)||String(id).startsWith('data:'))return id;return ''}
 function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('fuyu-blobs',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('blobs'))r.result.createObjectStore('blobs')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 async function idbPut(id,blob){const d=await idbOpen();return new Promise((res,rej)=>{const tx=d.transaction('blobs','readwrite');tx.objectStore('blobs').put(blob,id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function idbGet(id){try{const d=await idbOpen();return await new Promise((res,rej)=>{const tx=d.transaction('blobs','readonly');const req=tx.objectStore('blobs').get(id);req.onsuccess=()=>res(req.result||null);req.onerror=()=>rej(req.error)})}catch(e){return null}}
 async function hydrateBlobs(){try{const d=await idbOpen();await new Promise((res,rej)=>{const tx=d.transaction('blobs','readonly');const req=tx.objectStore('blobs').openCursor();req.onsuccess=()=>{const c=req.result;if(c){blobMap[c.key]=URL.createObjectURL(c.value);c.continue()}else res()};req.onerror=()=>rej(req.error)})}catch(e){}
  if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]})}
 function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+function shrinkTo(file,maxSide,quality){return new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>{const k=Math.min(1,maxSide/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(),'image/jpeg',quality)};im.onerror=rej;im.src=u})}
+async function compressForCloud(file){let side=900,q=.72,blob=file,dataUrl='';
+ for(let i=0;i<7;i++){blob=await shrinkTo(file,side,q);dataUrl=await fileToDataUrl(blob);if(dataUrl.length<=100000)return{blob,dataUrl};side=Math.max(360,Math.round(side*.82));q=Math.max(.42,q-.08)}
+ return{blob,dataUrl}}
+async function putCloudBlob(id,dataUrl){if(!id||!dataUrl)return false;try{const r=await fetch(FB_BLOB(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dataUrl),cache:'no-store'});return r.ok}catch(e){return false}}
+async function fetchCloudBlob(id){try{const r=await fetch(FB_BLOB(id)+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return '';const v=await r.json();return(typeof v==='string'&&v.indexOf('data:')===0)?v:''}catch(e){return ''}}
+function rememberBlob(id,dataUrl,fileBlob){if(!id||!dataUrl)return;STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;blobMap[id]=dataUrl;if(fileBlob)idbPut(id,fileBlob).catch(()=>{})}
 async function uploadBlob(file){const id=(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).replace(/-/g,'');
- const dataUrl=await fileToDataUrl(file);STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;blobMap[id]=dataUrl;
- try{await idbPut(id,file)}catch(e){}saveGen++;saveLocal();queuePush();return {id}}
+ const{blob,dataUrl}=await compressForCloud(file);rememberBlob(id,dataUrl,blob);
+ try{await putCloudBlob(id,dataUrl)}catch(e){}
+ saveGen++;saveLocal();queuePush();return {id}}
+function collectBlobIds(){const ids=new Set();const add=v=>{asImgs(v).forEach(x=>ids.add(x));if(typeof v==='string'&&v&&!/[\/.]/.test(v)&&!v.startsWith('data:'))ids.add(v)};
+ try{(SH||[]).forEach(x=>{add(x.imgs);add(x.img)});
+  (WL||[]).forEach(x=>{add(x.imgs);add(x.img)});
+  (WSPOTS||[]).forEach(x=>{add(x.imgs);add(x.img)});
+  if(typeof STAY!=='undefined'&&STAY.L)STAY.L.forEach(x=>add(x.imgs));
+  if(typeof OOTD!=='undefined'&&OOTD.L)OOTD.L.forEach(x=>add(x.imgs));
+  if(typeof JNL!=='undefined'&&JNL.L)JNL.L.forEach(x=>{add(x.imgs);add(x.stubs)});
+  (DAYS||[]).forEach(d=>(d.items||[]).forEach(it=>add(it.img)));
+ }catch(e){}
+ return[...ids].filter(Boolean)}
+async function dataUrlOf(id){if(STORE.blobs&&STORE.blobs[id]&&String(STORE.blobs[id]).indexOf('data:')===0)return STORE.blobs[id];
+ const src=blobMap[id];if(src&&src.indexOf('data:')===0)return src;
+ if(src&&src.indexOf('blob:')===0){try{return await fileToDataUrl(await(await fetch(src)).blob())}catch(e){}}
+ const b=await idbGet(id);if(b){try{return await fileToDataUrl(b)}catch(e){}}
+ return''}
+async function syncBlobsIn(){const missing=collectBlobIds().filter(id=>!blobSrc(id));if(!missing.length)return false;let got=false;
+ await Promise.all(missing.map(async id=>{const dataUrl=await fetchCloudBlob(id);if(!dataUrl)return;let fileBlob=null;try{fileBlob=await(await fetch(dataUrl)).blob()}catch(e){}rememberBlob(id,dataUrl,fileBlob);got=true}));
+ return got}
+async function syncBlobsOut(){for(const id of collectBlobIds()){const dataUrl=await dataUrlOf(id);if(!dataUrl)continue;STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;await putCloudBlob(id,dataUrl)}}
+async function refreshAllBlobs(){const inn=await syncBlobsIn();try{await syncBlobsOut()}catch(e){}if(inn&&typeof renderTrip==='function'){try{renderTrip()}catch(e){}}}
 const claude={async use(kind){if(kind==='user')return {canEdit(){return true}};if(kind==='db')return localDb;if(kind==='assets')return {upload:uploadBlob};return null}};
 /* 先載本機快取，避免重整空窗期；再與雲端比對 */
 STORE=loadLocal();
@@ -948,7 +982,9 @@ function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>
    if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
    const spotCh=refreshSpotImgs();
    renderTabs();if(!edit)renderView();if(spotCh)renderWish()},()=>{})}
- if(!edit)renderView()}catch(e){booted=true;try{await remotePull(true);applyStore();renderTrip()}catch(e2){setSync('啟動同步失敗',false)}}})();
+ if(!edit)renderView();
+ await refreshAllBlobs();
+ }catch(e){booted=true;try{await remotePull(true);applyStore();renderTrip();await refreshAllBlobs()}catch(e2){setSync('啟動同步失敗',false)}}})();
 applyStore();if(!edit)renderView();
 renderTrip();
 
