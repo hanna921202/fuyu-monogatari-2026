@@ -352,7 +352,7 @@ function emitAll(){Object.keys(listeners).forEach(emit);try{if(typeof applyStore
 function isEditing(){return !!(edit||(typeof eF!=='undefined'&&eF)||(typeof eW!=='undefined'&&eW)||(typeof eS!=='undefined'&&eS)||(typeof eCat!=='undefined'&&eCat)||(typeof eP!=='undefined'&&eP)||(typeof eC!=='undefined'&&eC))}
 function setSync(msg,ok){syncStatus=msg;const el=document.getElementById('sync');if(el){el.textContent=msg;el.className='tx '+(ok===false?'bad':ok?'ok':'')}}
 function deviceTag(){return navigator.userAgent.includes('iPhone')?'iPhone':(navigator.userAgent.includes('Android')?'Android':'web')}
-function adoptStore(next,raw){STORE=next&&typeof next==='object'?next:{};if(raw!=null)lastRemote=raw;else lastRemote=JSON.stringify(STORE);saveLocal();if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]});emitAll()}
+function adoptStore(next,raw){STORE=next&&typeof next==='object'?next:{};if(raw!=null)lastRemote=raw;else lastRemote=JSON.stringify(STORE);saveLocal();if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{if(!blobMap[id]||String(blobMap[id]).indexOf('blob:')!==0)blobMap[id]=STORE.blobs[id]});emitAll()}
 /* prefer 為主，other 只補 prefer 缺少的欄位（避免不完整本機把購物清單洗掉） */
 function mergeStore(prefer,other){
  const out=JSON.parse(JSON.stringify(prefer&&typeof prefer==='object'?prefer:{}));
@@ -415,21 +415,33 @@ function queuePush(){clearTimeout(pushTimer);pushTimer=setTimeout(()=>{flushPush
 function flushPush(){clearTimeout(pushTimer);saveGen++;pushChain=pushChain.then(()=>remotePush(),()=>remotePush());return pushChain}
 const localDb={collection(name){return {doc(id){return {async set(data){STORE[name]=STORE[name]||{};STORE[name][id]=JSON.parse(JSON.stringify(data));saveGen++;saveLocal();emit(name);const ok=await flushPush();if(!ok)throw new Error('雲端儲存失敗')}}},onSnapshot(cb){(listeners[name]=listeners[name]||[]).push(cb);emit(name);return ()=>{}}}}};
 const blobMap={};
+const CLOUD_OK_KEY='fuyu-blob-cloud-ok';
+function loadCloudOk(){try{const a=JSON.parse(localStorage.getItem(CLOUD_OK_KEY)||'[]');if(Array.isArray(a))a.forEach(id=>blobCloudOk.add(String(id)))}catch(e){}}
+function saveCloudOk(){try{localStorage.setItem(CLOUD_OK_KEY,JSON.stringify([...blobCloudOk]))}catch(e){}}
+function markCloudOk(id){if(!id)return;blobCloudOk.add(id);saveCloudOk()}
 function blobSrc(id){if(!id)return '';if(blobMap[id])return blobMap[id];if(STORE.blobs&&STORE.blobs[id])return STORE.blobs[id];if(/[\/.]/.test(id)||String(id).startsWith('data:'))return id;return ''}
 function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('fuyu-blobs',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('blobs'))r.result.createObjectStore('blobs')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 async function idbPut(id,blob){const d=await idbOpen();return new Promise((res,rej)=>{const tx=d.transaction('blobs','readwrite');tx.objectStore('blobs').put(blob,id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 async function idbGet(id){try{const d=await idbOpen();return await new Promise((res,rej)=>{const tx=d.transaction('blobs','readonly');const req=tx.objectStore('blobs').get(id);req.onsuccess=()=>res(req.result||null);req.onerror=()=>rej(req.error)})}catch(e){return null}}
+function preferDisplayUrl(id,dataUrl,fileBlob){
+ if(fileBlob){try{const prev=blobMap[id];if(prev&&String(prev).indexOf('blob:')===0)URL.revokeObjectURL(prev)}catch(e){}
+  blobMap[id]=URL.createObjectURL(fileBlob);return blobMap[id]}
+ if(blobMap[id]&&String(blobMap[id]).indexOf('blob:')===0)return blobMap[id];
+ if(dataUrl)blobMap[id]=dataUrl;return blobMap[id]||''}
 async function hydrateBlobs(){try{const d=await idbOpen();await new Promise((res,rej)=>{const tx=d.transaction('blobs','readonly');const req=tx.objectStore('blobs').openCursor();req.onsuccess=()=>{const c=req.result;if(c){blobMap[c.key]=URL.createObjectURL(c.value);c.continue()}else res()};req.onerror=()=>rej(req.error)})}catch(e){}
- if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{blobMap[id]=STORE.blobs[id]})}
+ /* 只補 IDB 沒有的；不要用巨大 data: 蓋掉已有的 blob:（顯示會變慢） */
+ if(STORE.blobs)Object.keys(STORE.blobs).forEach(id=>{if(!blobMap[id])blobMap[id]=STORE.blobs[id]})}
 function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
 function shrinkTo(file,maxSide,quality){return new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>{const k=Math.min(1,maxSide/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(),'image/jpeg',quality)};im.onerror=rej;im.src=u})}
 async function compressForCloud(file){let side=900,q=.72,blob=file,dataUrl='';
  for(let i=0;i<7;i++){blob=await shrinkTo(file,side,q);dataUrl=await fileToDataUrl(blob);if(dataUrl.length<=100000)return{blob,dataUrl};side=Math.max(360,Math.round(side*.82));q=Math.max(.42,q-.08)}
  return{blob,dataUrl}}
-const blobCloudOk=new Set();
-async function putCloudBlob(id,dataUrl){if(!id||!dataUrl)return false;if(blobCloudOk.has(id))return true;try{const r=await fetch(FB_BLOB(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dataUrl),cache:'no-store'});if(r.ok)blobCloudOk.add(id);return r.ok}catch(e){return false}}
-async function fetchCloudBlob(id){try{const r=await fetch(FB_BLOB(id)+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return '';const v=await r.json();if(typeof v==='string'&&v.indexOf('data:')===0){blobCloudOk.add(id);return v}return''}catch(e){return ''}}
-function rememberBlob(id,dataUrl,fileBlob){if(!id||!dataUrl)return;STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;blobMap[id]=dataUrl;if(fileBlob)idbPut(id,fileBlob).catch(()=>{})}
+const blobCloudOk=new Set();loadCloudOk();
+async function putCloudBlob(id,dataUrl){if(!id||!dataUrl)return false;if(blobCloudOk.has(id))return true;try{const r=await fetch(FB_BLOB(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dataUrl),cache:'no-store'});if(r.ok){markCloudOk(id);return true}return false}catch(e){return false}}
+async function fetchCloudBlob(id){try{/* 允許瀏覽器快取；勿加 ?t= 強制每次重抓 */
+ const r=await fetch(FB_BLOB(id),{cache:'force-cache'});
+ if(!r.ok)return '';const v=await r.json();if(typeof v==='string'&&v.indexOf('data:')===0){markCloudOk(id);return v}return''}catch(e){return ''}}
+function rememberBlob(id,dataUrl,fileBlob){if(!id||!dataUrl)return;STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;preferDisplayUrl(id,dataUrl,fileBlob);if(fileBlob)idbPut(id,fileBlob).catch(()=>{})}
 async function uploadBlob(file){const id=(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())).replace(/-/g,'');
  const{blob,dataUrl}=await compressForCloud(file);rememberBlob(id,dataUrl,blob);
  try{await putCloudBlob(id,dataUrl)}catch(e){}
@@ -449,14 +461,18 @@ async function dataUrlOf(id){if(STORE.blobs&&STORE.blobs[id]&&String(STORE.blobs
  if(src&&src.indexOf('blob:')===0){try{return await fileToDataUrl(await(await fetch(src)).blob())}catch(e){}}
  const b=await idbGet(id);if(b){try{return await fileToDataUrl(b)}catch(e){}}
  return''}
+function paintBlobs(){try{if(typeof renderTrip==='function')renderTrip();if(typeof renderTabs==='function')renderTabs();if(typeof renderView==='function'&&!edit)renderView()}catch(e){}}
 async function syncBlobsIn(){const missing=collectBlobIds().filter(id=>!blobSrc(id));if(!missing.length)return false;let got=false;
- const chunk=6;for(let i=0;i<missing.length;i+=chunk){await Promise.all(missing.slice(i,i+chunk).map(async id=>{const dataUrl=await fetchCloudBlob(id);if(!dataUrl)return;let fileBlob=null;try{fileBlob=await(await fetch(dataUrl)).blob()}catch(e){}rememberBlob(id,dataUrl,fileBlob);got=true}))}
+ const chunk=6;for(let i=0;i<missing.length;i+=chunk){await Promise.all(missing.slice(i,i+chunk).map(async id=>{const dataUrl=await fetchCloudBlob(id);if(!dataUrl)return;let fileBlob=null;try{fileBlob=await(await fetch(dataUrl)).blob()}catch(e){}rememberBlob(id,dataUrl,fileBlob);got=true}));if(got)paintBlobs()}
  return got}
 async function syncBlobsOut(){const ids=collectBlobIds();let n=0;
- for(const id of ids){if(blobCloudOk.has(id))continue;const dataUrl=await dataUrlOf(id);if(!dataUrl)continue;/* 先確認雲端是否已有，避免重複上傳 */const existed=await fetchCloudBlob(id);if(existed){rememberBlob(id,existed,null);continue}STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;if(await putCloudBlob(id,dataUrl))n++}
+ /* 已標記過的跳過；未標記的最多確認一次並寫入 cloudOk，之後不再整包重抓 */
+ for(const id of ids){if(blobCloudOk.has(id))continue;const dataUrl=await dataUrlOf(id);if(!dataUrl)continue;
+  const existed=await fetchCloudBlob(id);if(existed){markCloudOk(id);continue}
+  STORE.blobs=STORE.blobs||{};STORE.blobs[id]=dataUrl;if(await putCloudBlob(id,dataUrl))n++}
  if(n)saveLocal();return n}
 async function refreshAllBlobs(){setSync('同步圖片中…');const inn=await syncBlobsIn();let out=0;try{out=await syncBlobsOut()}catch(e){}
- if((inn||out)&&typeof renderTrip==='function'){try{renderTrip()}catch(e){}}
+ if(inn||out)paintBlobs();
  setSync(inn||out?('圖片已同步'+(out?' · 上傳 '+out+' 張':'')+(inn?' · 已補齊缺圖':'')):'雲端已連線 · 編輯會自動儲存',true)}
 const claude={async use(kind){if(kind==='user')return {canEdit(){return true}};if(kind==='db')return localDb;if(kind==='assets')return {upload:uploadBlob};return null}};
 /* 先載本機快取，避免重整空窗期；再與雲端比對 */
@@ -1001,18 +1017,20 @@ function keepImgs(k,items){const base=(BASE[k]&&BASE[k].items)||[];return (items
 function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>{const k=+id.slice(1),v=daysS[id];if(DAYS[k]&&v)DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});const t=STORE.trip||{};if(t.flights&&t.flights.list!=null)FL=asList(t.flights.list).map(normFl);if(t.wishes){const n=normWish(t.wishes);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}if(t.shopping){if(t.shopping.list!=null)SH=cl(asList(t.shopping.list)).map(normShopItem);if(Array.isArray(t.shopping.cats)&&t.shopping.cats.length)CATS=t.shopping.cats.map(String)}if(t.packing&&t.packing.groups)PK=cl(t.packing.groups);if(t.currency&&t.currency.list!=null)CR=cl(asList(t.currency.list));if(t.stays&&t.stays.list!=null)STAY.set(asList(t.stays.list));if(t.ootd&&t.ootd.list!=null)OOTD.set(asList(t.ootd.list));if(t.journal&&t.journal.list!=null)JNL.set(asList(t.journal.list));const led=STORE.ledger&&STORE.ledger.main;if(led)LG={budget:led.budget||0,list:cl(asList(led.list||[]))}}
 /* 必須放在 FL/SH/STAY 等宣告之後，否則 applyStore 會丟錯並跳過雲端同步（購物清單最容易因此重整後消失） */
 (async()=>{try{
- if(storeReady(STORE))applyStore();
- await remotePull(true);booted=true;await hydrateBlobs();
+ /* 先從 IndexedDB 還原圖片，再畫畫面，避免先空白再慢慢跳出 */
+ await hydrateBlobs();
+ if(storeReady(STORE)){applyStore();paintBlobs()}
+ await remotePull(true);booted=true;
  const [u,d]=await Promise.all([claude.use('user'),claude.use('db')]);
- db=d;canEdit=true;if(d)watchTrip();if(d&&canEdit)watchLedger();applyStore();renderTrip();
+ db=d;canEdit=true;if(d)watchTrip();if(d&&canEdit)watchLedger();applyStore();paintBlobs();
  setSync('雲端已連線 · 編輯會自動儲存',true);
  if(d){d.collection('days').onSnapshot(sn=>{sn.docs.forEach(doc=>{const k=+doc.id.slice(1),v=doc.data();
-   if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
-   const spotCh=refreshSpotImgs();
-   renderTabs();if(!edit)renderView();if(spotCh)renderWish()},()=>{})}
- if(!edit)renderView();
+  if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
+  const spotCh=refreshSpotImgs();
+  renderTabs();if(!edit)renderView();if(spotCh)renderWish()},()=>{})}
  await refreshAllBlobs();
- }catch(e){booted=true;try{await remotePull(true);applyStore();renderTrip();await refreshAllBlobs()}catch(e2){setSync('啟動同步失敗',false)}}})();
+ }catch(e){booted=true;try{await hydrateBlobs();await remotePull(true);applyStore();paintBlobs();await refreshAllBlobs()}catch(e2){setSync('啟動同步失敗',false)}}})();
+/* 同步啟動前先畫文字骨架；圖片等 hydrate 後由上面補上 */
 applyStore();if(!edit)renderView();
 renderTrip();
 
