@@ -664,8 +664,7 @@ function renderView(){const x=DAYS[cur];
  const hasR=dayHasRoutes(x);
  const hideBtn=hasR?`<button class="btn" data-a="toggleroutes">${showRoutes?'隱藏路線':'顯示路線'}</button>`:'';
  const planBtn=canPlan?`<button class="btn" data-a="planroutes">自動規劃今日路線</button>`:'';
- const metroBtn=`<button type="button" class="btn" data-a="metromaps">地鐵圖片查看</button>`;
- box.innerHTML=head(x,cur)+list+metroBtn+hideBtn+planBtn+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
+ box.innerHTML=head(x,cur)+list+hideBtn+planBtn+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
 function renderEdit(){const x=draft;
  box.innerHTML=`<div class="banner">後台編輯模式 · DAY ${cur+1} ${esc(x.d)}</div>
  <div class="row"><label>標題<input data-f="title" value="${esc(x.title)}"></label><label>地區標籤<input data-f="c" value="${esc(x.c)}"></label></div>
