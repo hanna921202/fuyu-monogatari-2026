@@ -151,10 +151,11 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #yaku{display:flex;flex-direction:column;gap:22px}
 #yaku .yaku-block h3{margin:0 0 10px;font-size:15px;letter-spacing:.14em;color:var(--acc);font-weight:600}
 #yaku .phrase-list{display:grid;gap:8px}
-#yaku .phrase{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;gap:3px}
-#yaku .phrase .zh{font-size:13px;color:var(--mute);letter-spacing:.04em}
-#yaku .phrase .ja{font-size:16px;font-weight:600;letter-spacing:.04em;line-height:1.45}
-#yaku .phrase .ro{font-size:12px;color:var(--acc);letter-spacing:.06em;font-family:"Cormorant Garamond",var(--jp);font-style:italic}
+#yaku .phrase{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}
+#yaku .phrase .zh{font-size:13px;color:var(--mute);letter-spacing:.04em;grid-column:1}
+#yaku .phrase .ja{font-size:16px;font-weight:600;letter-spacing:.04em;line-height:1.45;grid-column:1}
+#yaku .phrase .ro{font-size:12px;color:var(--acc);letter-spacing:.06em;font-family:"Cormorant Garamond",var(--jp);font-style:italic;grid-column:1}
+#yaku .phrase .phrase-say{grid-column:2;grid-row:1/span 3;margin:0;align-self:center;flex:0 0 auto;min-width:36px;padding:6px 8px}
 #yaku .yaku-box{padding:14px 16px;border-radius:14px}
 #yaku .yaku-dir{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 #yaku .yaku-dir .lang{font-size:13px;letter-spacing:.1em;padding:4px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(120,150,180,.1);color:var(--ink)}
@@ -1275,11 +1276,34 @@ async function yakuTranslate(text,from,to){
  if(!r.ok)throw new Error('google '+r.status);
  return yakuParseGoogle(await r.json());
 }
+let yakuAudio=null;
+function yakuStopSpeak(){try{if(window.speechSynthesis)speechSynthesis.cancel()}catch(e){}try{if(yakuAudio){yakuAudio.pause();yakuAudio.src='';yakuAudio=null}}catch(e){}}
+function yakuChunkSpeak(text,max){const s=String(text||'').trim();if(!s)return[];const parts=s.split(/([。！？!?\n]+|[、，,；;：:\s]+)/);const out=[];let buf='';
+ for(const part of parts){if(!part)continue;if((buf+part).length<=max)buf+=part;else{if(buf.trim())out.push(buf.trim());if(part.length<=max)buf=part;else{for(let i=0;i<part.length;i+=max)out.push(part.slice(i,i+max));buf=''}}}
+ if(buf.trim())out.push(buf.trim());return out.length?out:[s.slice(0,max)]}
+function yakuSpeakBrowser(text,lang){return new Promise((resolve,reject)=>{
+ if(!window.speechSynthesis){reject(new Error('no tts'));return}
+ const u=new SpeechSynthesisUtterance(text);u.lang=lang;u.rate=0.95;
+ const pick=()=>{const vs=speechSynthesis.getVoices()||[];const pref=vs.find(v=>v.lang===lang)||vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith(lang.slice(0,2).toLowerCase()));if(pref)u.voice=pref};
+ pick();if(!(speechSynthesis.getVoices()||[]).length)speechSynthesis.addEventListener('voiceschanged',pick,{once:true});
+ u.onend=()=>resolve();u.onerror=e=>reject(e.error||e);speechSynthesis.speak(u)})}
+function yakuPlayUrl(url){return new Promise((resolve,reject)=>{
+ const a=new Audio(url);yakuAudio=a;a.onended=()=>{if(yakuAudio===a)yakuAudio=null;resolve()};a.onerror=()=>{if(yakuAudio===a)yakuAudio=null;reject(new Error('audio'))};a.play().catch(err=>{if(yakuAudio===a)yakuAudio=null;reject(err)})})}
+async function yakuSpeakGoogle(text,lang){
+ const chunks=yakuChunkSpeak(text,180),tl=lang==='zh-TW'?'zh-TW':'ja';
+ for(const chunk of chunks)await yakuPlayUrl(`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(chunk)}`);
+}
+async function yakuSpeak(text,lang,st){
+ const q=String(text||'').trim();if(!q){if(st)st.textContent='沒有可播放的文字';return}
+ yakuStopSpeak();if(st)st.textContent='播放語音中…';
+ try{await yakuSpeakGoogle(q,lang);if(st)st.textContent='播放結束'}
+ catch(e){try{yakuStopSpeak();await yakuSpeakBrowser(q,lang);if(st)st.textContent='播放結束'}catch(err){if(st)st.textContent='此裝置無法播放語音'}}
+}
 function yakuStopMic(){try{if(yakuRec)yakuRec.stop()}catch(e){}yakuListening=false;const b=yakuBox&&yakuBox.querySelector('[data-a="yakumic"]');if(b)b.classList.remove('on')}
 function renderYaku(){
  if(!yakuBox)return;
  const m=yakuLangMeta();
- const phrases=YAKU_PHRASES.map(p=>`<div class="phrase"><div class="zh">${esc(p.zh)}</div><div class="ja">${esc(p.ja)}</div><div class="ro">${esc(p.ro)}</div></div>`).join('');
+ const phrases=YAKU_PHRASES.map(p=>`<div class="phrase"><div class="zh">${esc(p.zh)}</div><div class="ja">${esc(p.ja)}</div><div class="ro">${esc(p.ro)}</div><button type="button" class="btn s phrase-say" data-a="phrasesay" data-ja="${esc(p.ja)}" title="播放日文">🔊</button></div>`).join('');
  yakuBox.innerHTML=`<div class="yaku-block"><h3>常用日語</h3><div class="phrase-list">${phrases}</div></div>
  <div class="yaku-block"><h3>中日互譯</h3><div class="card yaku-box">
   <div class="yaku-dir"><span class="lang${yakuDir==='zh-ja'?' on':''}">中文</span><button type="button" class="swap" data-a="yakuswap" title="切換方向">⇄ 切換</button><span class="lang${yakuDir==='ja-zh'?' on':''}">日文</span></div>
@@ -1288,10 +1312,10 @@ function renderYaku(){
     <div class="yaku-tools"><button type="button" class="btn pri" data-a="yakugo">翻譯</button><button type="button" class="btn mic" data-a="yakumic" title="語音輸入">🎤 錄音打字</button><button type="button" class="btn s" data-a="yakuclear">清除</button></div>
    </div>
    <div class="yaku-pane"><label>結果（${esc(m.toLabel)}）</label><textarea id="yaku-out" class="out" readonly placeholder="翻譯結果會顯示在這裡"></textarea>
-    <div class="yaku-tools"><button type="button" class="btn s" data-a="yakucopy">複製結果</button></div>
+    <div class="yaku-tools"><button type="button" class="btn pri" data-a="yakusay" title="播放翻譯結果">🔊 播放語音</button><button type="button" class="btn s" data-a="yakustop" title="停止播放">停止</button><button type="button" class="btn s" data-a="yakucopy">複製結果</button></div>
    </div>
   </div>
-  <p class="yaku-hint">翻譯結果由 Google 翻譯即時回傳。錄音打字請用 Chrome／Edge，並允許麥克風權限；語音語言會依翻譯方向自動切換。</p>
+  <p class="yaku-hint">翻譯與發音皆使用 Google。翻譯完成後會自動播放結果語音，方便直接給對方聽；也可再按「播放語音」重播。</p>
   <div class="yaku-status" id="yaku-st"></div>
  </div></div>`;
  if(yakuListening){const b=yakuBox.querySelector('[data-a="yakumic"]');if(b)b.classList.add('on')}
@@ -1300,8 +1324,8 @@ function renderYaku(){
 async function yakuDoTranslate(){
  const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');
  if(!inp||!out)return;const text=inp.value.trim();if(!text){if(st)st.textContent='請先輸入文字或錄音';return}
- if(yakuBusy)return;yakuBusy=true;if(st)st.textContent='正在向 Google 翻譯查詢…';
- try{const m=yakuLangMeta();out.value=await yakuTranslate(text,m.from,m.to);if(st)st.textContent='已由 Google 翻譯完成'}catch(e){out.value='';if(st)st.textContent='Google 翻譯暫時無法連線，請稍後再試'}finally{yakuBusy=false}
+ if(yakuBusy)return;yakuBusy=true;yakuStopSpeak();if(st)st.textContent='正在向 Google 翻譯查詢…';
+ try{const m=yakuLangMeta();out.value=await yakuTranslate(text,m.from,m.to);if(st)st.textContent='已由 Google 翻譯完成';const speakLang=m.to==='ja'?'ja-JP':'zh-TW';yakuSpeak(out.value,speakLang,st)}catch(e){out.value='';if(st)st.textContent='Google 翻譯暫時無法連線，請稍後再試'}finally{yakuBusy=false}
 }
 function yakuToggleMic(){
  const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -1330,7 +1354,10 @@ if(yakuBox){
   if(a==='yakuswap'){const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out');const iv=inp?inp.value:'',ov=out?out.value:'';yakuStopMic();yakuDir=yakuDir==='zh-ja'?'ja-zh':'zh-ja';renderYaku();const inp2=document.getElementById('yaku-in'),out2=document.getElementById('yaku-out');if(inp2)inp2.value=ov||iv;if(out2)out2.value=ov?iv:'';return}
   if(a==='yakugo'){yakuDoTranslate();return}
   if(a==='yakumic'){yakuToggleMic();return}
-  if(a==='yakuclear'){const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');if(inp)inp.value='';if(out)out.value='';if(st)st.textContent='';return}
+  if(a==='yakuclear'){yakuStopSpeak();const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');if(inp)inp.value='';if(out)out.value='';if(st)st.textContent='';return}
+  if(a==='yakusay'){const out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');const m=yakuLangMeta();yakuSpeak(out&&out.value,m.to==='ja'?'ja-JP':'zh-TW',st);return}
+  if(a==='yakustop'){yakuStopSpeak();const st=document.getElementById('yaku-st');if(st)st.textContent='已停止播放';return}
+  if(a==='phrasesay'){const st=document.getElementById('yaku-st');yakuSpeak(t.dataset.ja||'','ja-JP',st);return}
   if(a==='yakucopy'){const out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');if(!out||!out.value)return;try{await navigator.clipboard.writeText(out.value);if(st)st.textContent='已複製'}catch(err){out.select();if(st)st.textContent='請手動複製'}}
  });
 }
