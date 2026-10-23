@@ -1266,13 +1266,15 @@ const YAKU_PHRASES=[
 const yakuBox=document.getElementById('yaku');
 let yakuDir='zh-ja',yakuRec=null,yakuListening=false,yakuBusy=false;
 function yakuLangMeta(){return yakuDir==='zh-ja'?{from:'zh-TW',to:'ja',fromLabel:'中文',toLabel:'日文',speech:'zh-TW'}:{from:'ja',to:'zh-TW',fromLabel:'日文',toLabel:'中文',speech:'ja-JP'}}
+function yakuParseGoogle(j){const out=(j&&j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('');if(!out)throw new Error('empty');return out}
 async function yakuTranslate(text,from,to){
  const q=String(text||'').trim();if(!q)return '';
- const gtx=`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(from==='zh-TW'?'zh-TW':from)}&tl=${encodeURIComponent(to==='zh-TW'?'zh-TW':to)}&dt=t&q=${encodeURIComponent(q)}`;
- try{const r=await fetch(gtx);if(!r.ok)throw 0;const j=await r.json();const out=(j&&j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('');if(out)return out}catch(e){}
- const pair=`${from==='zh-TW'?'zh-CN':from}|${to==='zh-TW'?'zh-TW':to}`;
- const mm=`https://api.mymemory.translated.net/get?q=${encodeURIComponent(q)}&langpair=${encodeURIComponent(pair)}`;
- const r2=await fetch(mm);const j2=await r2.json();const out2=j2&&j2.responseData&&j2.responseData.translatedText;if(!out2)throw new Error('translate failed');return out2}
+ const sl=from==='zh-TW'?'zh-TW':from,tl=to==='zh-TW'?'zh-TW':to;
+ const body=new URLSearchParams({client:'gtx',sl,tl,dt:'t',q});
+ const r=await fetch('https://translate.googleapis.com/translate_a/single',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:body.toString()});
+ if(!r.ok)throw new Error('google '+r.status);
+ return yakuParseGoogle(await r.json());
+}
 function yakuStopMic(){try{if(yakuRec)yakuRec.stop()}catch(e){}yakuListening=false;const b=yakuBox&&yakuBox.querySelector('[data-a="yakumic"]');if(b)b.classList.remove('on')}
 function renderYaku(){
  if(!yakuBox)return;
@@ -1289,16 +1291,17 @@ function renderYaku(){
     <div class="yaku-tools"><button type="button" class="btn s" data-a="yakucopy">複製結果</button></div>
    </div>
   </div>
-  <p class="yaku-hint">錄音打字需使用 Chrome／Edge，並允許麥克風權限；語音語言會依目前翻譯方向自動切換（中文↔日文）。</p>
+  <p class="yaku-hint">翻譯結果由 Google 翻譯即時回傳。錄音打字請用 Chrome／Edge，並允許麥克風權限；語音語言會依翻譯方向自動切換。</p>
   <div class="yaku-status" id="yaku-st"></div>
  </div></div>`;
  if(yakuListening){const b=yakuBox.querySelector('[data-a="yakumic"]');if(b)b.classList.add('on')}
+ const tin=document.getElementById('yaku-in');if(tin)tin.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();yakuDoTranslate()}});
 }
 async function yakuDoTranslate(){
  const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');
  if(!inp||!out)return;const text=inp.value.trim();if(!text){if(st)st.textContent='請先輸入文字或錄音';return}
- if(yakuBusy)return;yakuBusy=true;if(st)st.textContent='翻譯中…';
- try{const m=yakuLangMeta();out.value=await yakuTranslate(text,m.from,m.to);if(st)st.textContent='完成'}catch(e){if(st)st.textContent='翻譯失敗，請稍後再試';}finally{yakuBusy=false}
+ if(yakuBusy)return;yakuBusy=true;if(st)st.textContent='正在向 Google 翻譯查詢…';
+ try{const m=yakuLangMeta();out.value=await yakuTranslate(text,m.from,m.to);if(st)st.textContent='已由 Google 翻譯完成'}catch(e){out.value='';if(st)st.textContent='Google 翻譯暫時無法連線，請稍後再試'}finally{yakuBusy=false}
 }
 function yakuToggleMic(){
  const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
