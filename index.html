@@ -529,35 +529,81 @@ function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.cr
 function head(x,i){return `<div class="dayhead"><h3>${esc(x.title)}</h3><span class="badge">DAY ${i+1} · ${esc(x.d)}（${esc(x.w)}）</span></div>`}
 function routeEndpoint(n){const s=String(n||'').trim();if(!s)return'';const parts=s.split(/\s*[→\-–—>]+\s*/).map(x=>x.trim()).filter(Boolean);return parts.length?parts[parts.length-1]:s}
 function mapsTransitUrl(a,b,area){const o=[a,area].filter(Boolean).join(' ');const d=[b,area].filter(Boolean).join(' ');return`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(o)}&destination=${encodeURIComponent(d)}&travelmode=transit`}
-function placeKey(n){return String(routeEndpoint(n)||'').toLowerCase().replace(/\s+/g,'').replace(/[・·]/g,'')}
-/* 11/26 札幌測試用：依景點名稱給常見大眾運輸／步行建議（可再手動改） */
+function placeKey(n){return String(routeEndpoint(n)||'').toLowerCase().replace(/\s+/g,'').replace(/[・·＆&／/]/g,'').replace(/神社|商店街|公園|機場|空港|溫泉|日歸泡湯|展望台賞夜景|購票與搭乘纜車|前往|返回|市區/g,'')}
+function routeAreaFor(day,name){const c=String(day&&day.c||''),n=String(name||'');
+ if(/川越|藏造|一番街/.test(n)||c==='川越')return'川越';
+ if(/成田|酒酒井|Outlet/.test(n)||c==='成田')return'成田';
+ if(/旭川|旭山|美瑛|富良野|四季彩/.test(n))return'北海道';
+ if(/小樽|運河|堺町|天狗|定山溪|神宮/.test(n))return'北海道';
+ if(/原宿|新宿|花園|無印|淺草|秋葉|迪士尼|蒲田|羽田/.test(n)||c==='東京'||c==='移動日')return'東京';
+ if(c==='札幌'||c==='北海道')return'札幌';
+ return c||'日本'}
+/* 依景點名稱給常見大眾運輸／步行建議（可再手動改）；涵蓋整趟行程 */
 const ROUTE_HINTS={
+ /* 11/26 札幌 */
  '新千歲機場|二條市場':'JR 快速 Airport → 札幌站（約 37 分），轉地下鐵南北線到「大通」站，34 出口步行約 5 分。行李多可改機場巴士到札幌駅前。',
  '新千歳空港|二條市場':'JR 快速 Airport → 札幌站（約 37 分），轉地下鐵南北線到「大通」站，34 出口步行約 5 分。',
  '二條市場|狸小路商店街':'兩地很近，步行約 1–3 分即可（往狸小路 1 丁目方向）。下雪也可走騎樓／地下街。',
  '狸小路商店街|中島公園':'步行至地下鐵「すすきの」站，搭南北線 1 站到「中島公園」站，出站即達（車程約 2–3 分）。',
  '中島公園|大通公園':'地下鐵南北線「中島公園」→「大通」約 4 分；或沿公園／創成川方向步行約 15–20 分。',
- '大通公園|薄野':'步行約 10–12 分往南；或地下鐵南北線「大通」→「すすきの」1 站。'
+ '大通公園|薄野':'步行約 10–12 分往南；或地下鐵南北線「大通」→「すすきの」1 站。',
+ /* 11/27 旭川・美瑛・富良野 */
+ '札幌|旭川':'JR 特急 Lilac／Kamui 札幌 → 旭川（約 1 小時 20–30 分）。也可高速公路巴士。',
+ '旭川|旭山動物園':'旭川駅前搭「旭山動物園號」巴士約 40 分直達園區；回程同路線。',
+ '旭山動物園|美瑛':'動物園巴士回旭川駅，轉 JR／巴士往美瑛（約 30–40 分）；或套裝觀光巴士。四季彩之丘多由美瑛駅轉觀光巴士／計程車。',
+ '美瑛|富良野':'JR 富良野線 美瑛 → 富良野（約 30–40 分）。森林精靈露臺多由富良野駅轉巴士／計程車。',
+ '四季彩之丘|富良野':'返回美瑛／富良野駅後，轉往富良野方向；森林精靈露臺建議預查接駁時刻。',
+ '富良野|札幌':'JR 富良野線 → 旭川（或滝川）再轉特急回札幌；總程約 2.5–3.5 小時。亦可高速公路巴士。',
+ '森林精靈露臺|札幌':'先回富良野駅，再依「富良野→札幌」轉乘特急／巴士返回市區。',
+ /* 11/28 神宮・定山溪・小樽・天狗山 */
+ '北海道神宮|定山溪':'地鐵東西線至「大通／バスセンター前」附近，轉定山溪方向巴士（約 60–70 分）至定山溪溫泉。',
+ '定山溪|小樽':'定山溪巴士回札幌後轉 JR 快速／普通往小樽（約 30–40 分）；或查當日有無直達／套票路線。',
+ '小樽|小樽運河':'小樽駅步行約 5–10 分即可到運河區；也可搭中央巴士短程。',
+ '小樽運河|堺町通':'運河旁步行約 3–8 分即進入堺町通商店街，幾乎不用搭車。',
+ '堺町通|天狗山':'小樽駅前巴士總站 3 月台搭中央巴士 9 系統（天狗山線）約 20 分到纜車山腳站。',
+ '山腳站|纜車':'山腳駅購票後搭天狗山纜車上行（約 4–5 分）至山頂。',
+ '纜車|山頂':'纜車山頂駅步行即可到各展望台／天狗山神社。',
+ '山頂|小樽':'纜車下行回山腳，再搭原巴士線回小樽駅前或運河區。',
+ '小樽|札幌':'JR 快速 Airport／普通列車 小樽 → 札幌（約 30–40 分）。',
+ /* 11/29 移動日 */
+ '新千歲機場|羽田機場':'國內線航班（請依實際班機）。抵達羽田後轉京急／單軌／機場巴士。',
+ '羽田機場|蒲田':'京急空港線「羽田空港」→「京急蒲田」約 10–15 分；或機場巴士。',
+ /* 11/30 東京 */
+ '原宿|花園神社':'明治神宮前／原宿駅沿竹下通或明治通往新宿方向，花園神社步行約 20–30 分；或地铁轉「新宿三丁目」再步行。',
+ '花園神社|無印良品':'步行至新宿靖國通周邊約 5–10 分；無印良品新宿靖國通店近地下鉄「新宿三丁目」。',
+ '無印良品|新宿':'已在新宿核心區，步行即可到新宿駅／歌舞伎町一帶（約 5–15 分）。',
+ '原宿|新宿':'JR 山手線「原宿」→「新宿」1 站（約 3 分）。',
+ /* 12/01 川越 */
+ '川越一番街商店街|藏造老屋街道':'同在川越藏造街屋區域，步行約 3–8 分即可串連，幾乎不需轉乘。',
+ /* 12/03 東京候選 */
+ '淺草寺|秋葉原':'地铁銀座線「淺草」→「末広町／神田」再步行，或都營淺草線／JR 轉乘；車程約 15–25 分。',
+ '秋葉原|淺草寺':'反向同路線，地下鐵／JR 約 15–25 分。',
+ /* 12/04 成田・返程 */
+ '酒酒井 Outlet|成田山新勝寺':'Outlet 巴士／計程車至京成「酒々井」再轉，或往成田方向巴士；車程視班次約 20–40 分。',
+ '成田山新勝寺|成田機場':'京成「成田」／「東成田」轉機場列車，或成田山門前巴士至機場各航廈（約 20–30 分）。',
+ '成田機場|桃園國際機場':'國際線航班返台（請依實際班機）。'
 };
 function lookupRouteHint(a,b){const ka=placeKey(a),kb=placeKey(b);if(!ka||!kb)return'';
  const hit=Object.keys(ROUTE_HINTS).find(k=>{const[x,y]=k.split('|');return placeKey(x)===ka&&placeKey(y)===kb});
  if(hit)return ROUTE_HINTS[hit];
- /* 寬鬆包含比對（二條／二条、薄野／すすきの） */
- const soft=Object.keys(ROUTE_HINTS).find(k=>{const[x,y]=k.split('|');return(ka.includes(placeKey(x))||placeKey(x).includes(ka))&&(kb.includes(placeKey(y))||placeKey(y).includes(kb))});
+ const soft=Object.keys(ROUTE_HINTS).find(k=>{const[x,y]=k.split('|');const px=placeKey(x),py=placeKey(y);
+  return(ka.includes(px)||px.includes(ka)||ka.includes(x.replace(/\s/g,'')))&&(kb.includes(py)||py.includes(kb)||kb.includes(y.replace(/\s/g,'')))});
  return soft?ROUTE_HINTS[soft]:''}
-function buildRouteBetween(prevName,nextName,area){
+function buildRouteBetween(prevName,nextName,day){
  const a=routeEndpoint(prevName),b=routeEndpoint(nextName);if(!a||!b)return null;
+ const area=routeAreaFor(day,b)||routeAreaFor(day,a);
  const hint=lookupRouteHint(a,b)||`建議以大眾運輸前往：${a} → ${b}（詳見地圖；可再手動補正）`;
- return{route:hint,routeUrl:mapsTransitUrl(a,b,area||'札幌')}}
-function planRoutesForDay(day){if(!day||!Array.isArray(day.items))return 0;let n=0;const area=day.c||'';
+ return{route:hint,routeUrl:mapsTransitUrl(a,b,area)}}
+function planRoutesForDay(day){if(!day||!Array.isArray(day.items))return 0;let n=0;
  for(let i=1;i<day.items.length;i++){const prev=day.items[i-1],it=day.items[i];const a=routeEndpoint(prev&&prev.n),b=routeEndpoint(it&&it.n);if(!a||!b)continue;
-  const built=buildRouteBetween(a,b,area);if(!built)continue;it.route=built.route;it.routeUrl=built.routeUrl;n++}return n}
+  const built=buildRouteBetween(a,b,day);if(!built)continue;it.route=built.route;it.routeUrl=built.routeUrl;n++}return n}
+async function planRoutesAllDays(){let total=0;for(let i=0;i<DAYS.length;i++){total+=planRoutesForDay(DAYS[i]);await saveDayRoutes(i)}return total}
 function routeHTML(o){if(!o||(!o.route&&!o.routeUrl))return'';
  return`<li class="tr"><div class="route"><span class="rk">交通</span><span class="rt">${esc(o.route||'查看地圖路線')}</span>${o.routeUrl?`<a href="${esc(o.routeUrl)}" target="_blank" rel="noopener">地圖開啟</a>`:''}</div></li>`}
 function renderView(){const x=DAYS[cur];
  const list=x.items.length?`<ul class="tl">${x.items.map((o,i)=>`${i>0?routeHTML(o):''}<li class="${blobSrc(o.img)?'hasimg':''}">${blobSrc(o.img)?`<img class="ti" src="${blobSrc(o.img)}" alt="${esc(o.n)}" loading="lazy">`:''}<div class="tx">${o.t?`<div class="t">${esc(o.t)}</div>`:''}<div class="n">${esc(o.n)}</div>${o.m?`<div class="m">${esc(o.m)}</div>`:''}</div></li>`).join('')}</ul>`:'<div class="tbd">這天還沒有行程…</div>';
  const canPlan=canEdit&&x.items&&x.items.length>1;
- const planBtn=canPlan?`<button class="btn" data-a="planroutes">${String(x.d).includes('11/26')?'測試：自動規劃今日路線':'自動規劃今日路線'}</button>`:'';
+ const planBtn=canPlan?`<button class="btn" data-a="planroutes">自動規劃今日路線</button><button class="btn" data-a="planall">規劃全部天數</button>`:'';
  box.innerHTML=head(x,cur)+list+planBtn+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
 function renderEdit(){const x=draft;
  box.innerHTML=`<div class="banner">後台編輯模式 · DAY ${cur+1} ${esc(x.d)}</div>
@@ -587,6 +633,8 @@ box.addEventListener('input',e=>{if(!edit)return;const f=e.target.dataset.f,it=e
 box.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;const it=e.target.closest('.item'),i=it?+it.dataset.i:-1;
  if(a==='planroutes'){const day=DAYS[cur];if(!day||edit)return;const btn=e.target;btn.disabled=true;btn.textContent='規劃中…';
   const n=planRoutesForDay(day);await saveDayRoutes(cur);renderView();setSync(n?`已規劃 ${n} 段路線（可再手動修改）`:'找不到可規劃的景點對',!!n);return}
+ if(a==='planall'){if(edit)return;const btn=e.target;btn.disabled=true;btn.textContent='規劃全部中…';
+  const n=await planRoutesAllDays();renderView();setSync(n?`全部天數已規劃 ${n} 段路線`:'找不到可規劃的景點對',!!n);return}
  if(a==='edit'){draft=JSON.parse(JSON.stringify(DAYS[cur]));edit=true;return renderEdit()}
  if(a==='cancel'){edit=false;draft=null;return renderView()}
  if(a==='add'){draft.items.push({t:'',n:'',m:'',route:'',routeUrl:''});return renderEdit()}
