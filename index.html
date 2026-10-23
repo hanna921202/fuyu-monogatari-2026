@@ -112,6 +112,19 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .srow{display:flex;gap:12px;overflow-x:auto;padding:2px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .srow::-webkit-scrollbar{display:none;width:0;height:0}
 .srow .sp{flex:0 0 min(68vw,220px);scroll-snap-align:start}
+#ootd{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:12px;align-items:start;max-width:720px}
+#ootd>.btn,#ootd>.banner,#ootd>.item,#ootd>.bar{grid-column:1/-1}
+#ootd .ootd-card{padding:0;margin:0;overflow:hidden;border-radius:12px;box-shadow:0 8px 22px -16px rgba(20,50,90,.32)}
+#ootd .ootd-card .sp-rail img,#ootd .ootd-card .ph{aspect-ratio:3/4}
+#ootd .ootd-card .sp-dots{bottom:6px;gap:4px}
+#ootd .ootd-card .sp-dots i{width:5px;height:5px}
+#ootd .ootd-card .sb{padding:9px 11px 11px}
+#ootd .ootd-card .od{font-family:"Cormorant Garamond",serif;font-size:17px;line-height:1.2;color:var(--acc);letter-spacing:.04em}
+#ootd .ootd-card .od small{font-family:var(--jp);font-size:10px;font-weight:500;letter-spacing:.12em;color:var(--mute);margin-left:5px;vertical-align:middle}
+#ootd .ootd-card .om{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+#ootd .ootd-card .om .badge{font-size:10px;padding:1px 7px;letter-spacing:.06em}
+#ootd .ootd-card .on{margin-top:5px;font-size:12px;line-height:1.4;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#ootd .ootd-card .tbd{margin:4px 0 0;padding:0;font-size:11px}
 .stay-home{margin:0 0 8px}
 .stay-home .bar{margin-top:10px;justify-content:flex-end}
 .shcat{margin:0 0 22px}.shcat .chd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
@@ -209,7 +222,12 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .fl .mx .k{font-size:10px}
 .fl .mx .seats{font-size:14px}
 .fl .nt{font-size:11px;margin-top:4px}
-.wish .card,.pk .card,#stay .card,#day.card,#cur .card,#acct .card,#ootd .card,#jnl .card{padding:10px 12px;border-radius:10px}
+.wish .card,.pk .card,#stay .card,#day.card,#cur .card,#acct .card,#jnl .card{padding:10px 12px;border-radius:10px}
+#ootd{gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
+#ootd .ootd-card{border-radius:10px}
+#ootd .ootd-card .sb{padding:8px 9px 9px}
+#ootd .ootd-card .od{font-size:15px}
+#ootd .ootd-card .on{font-size:11px;-webkit-line-clamp:2}
 .tabs{gap:6px;padding:2px 0 8px}
 .tab{border-radius:10px;padding:5px 10px;font-size:11px}
 .tab b{font-size:16px}
@@ -942,7 +960,8 @@ const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:
  blank:()=>({date:'',place:'',temp:'',note:'',imgs:[]}),
  fields:[['date','日期','date','sm'],['place','地點／天氣','text',''],['temp','氣溫','text','sm'],['note','穿搭說明','ta']],
  clean:L=>[...L].map(r=>({...r,imgs:asImgs(r.imgs)})).sort((a,b)=>String(a.date).localeCompare(String(b.date))),
- view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';return `<div class="card sp" style="margin-bottom:14px">${mediaRail(asImgs(r.imgs),'')}<div class="sb"><div class="dayhead"><h3 style="font-size:20px">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''}</h3><span>${r.temp?`<span class="badge">${esc(r.temp)}</span> `:''}${r.place?`<span class="badge">${esc(r.place)}</span>`:''}</span></div>${r.note?`<div style="white-space:pre-wrap">${esc(r.note)}</div>`:'<div class="tbd">尚未寫穿搭說明</div>'}</div></div>`}});
+ view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';const tags=[r.temp,r.place].filter(Boolean).map(t=>`<span class="badge">${esc(t)}</span>`).join('');
+  return `<div class="card ootd-card">${mediaRail(asImgs(r.imgs),'')}<div class="sb"><div class="od">${esc(String(r.date).slice(5).replace('-','/'))}${w?`<small>${w}</small>`:''}</div>${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:'<div class="tbd">尚未寫穿搭</div>'}</div></div>`}});
 const JNL=mkList({box:'jnl',doc:'journal',title:'旅途手記',noun:'一天',big:true,
  groups:[['stubs','票根／紀念章照片（可多選）'],['imgs','今日相片（可多選）']],
  def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,weather:'',temp:'',hl:'',hlnote:'',surprise:'',mood:'',stubs:[],imgs:[]})),
