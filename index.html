@@ -49,7 +49,7 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .dayhead{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px}
 .dayhead .dh-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;min-width:0;flex:1}
 .dayhead h3{margin:0;font-size:22px;letter-spacing:.1em}
-.dayhead .metro-btn{margin:0;flex:0 0 auto;white-space:nowrap;font-size:12px;padding:4px 10px}
+.dayhead .metro-btn{margin:0;flex:0 0 auto;white-space:nowrap;font-size:12px;padding:5px 12px;background:var(--acc);color:#fff;border-color:var(--acc)}
 #metrolb{position:fixed;inset:0;z-index:65;background:rgba(5,12,22,.82);display:none;align-items:center;justify-content:center;padding:16px}
 #metrolb.on{display:flex}
 #metrolb .metro-panel{width:min(920px,100%);max-height:min(88vh,900px);background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:12px 12px 14px;box-shadow:0 18px 40px -20px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:8px}
@@ -552,7 +552,7 @@ function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.cr
  b.onclick=()=>{edit=false;draft=null;show(i)};tabs.appendChild(b)})}
 const METRO_MAPS=[
  {id:'sapporo',title:'札幌市營地下鐵',src:'images/metro/sapporo-subway.png',credit:'地圖來源：Hiro36／Wikimedia Commons（CC BY-SA）'},
- {id:'tokyo',title:'東京地鐵・都營',src:'images/metro/tokyo-metro.png',credit:'地圖來源：Hisagi（氷鷺）／Wikimedia Commons（CC BY-SA）'}
+ {id:'tokyo',title:'東京地鐵・都營',src:'images/metro/tokyo-metro.jpg',credit:'地圖來源：Hisagi（氷鷺）／Wikimedia Commons（CC BY-SA）'}
 ];
 function metroStartIndex(day){const c=String(day&&day.c||'');const t=String(day&&day.title||'');
  if(/東京|成田|川越|移動|蒲田|羽田|迪士尼|淺草|秋葉|原宿|新宿/.test(c+t))return 1;
@@ -652,7 +652,8 @@ function renderView(){const x=DAYS[cur];
  const hasR=dayHasRoutes(x);
  const hideBtn=hasR?`<button class="btn" data-a="toggleroutes">${showRoutes?'隱藏路線':'顯示路線'}</button>`:'';
  const planBtn=canPlan?`<button class="btn" data-a="planroutes">自動規劃今日路線</button>`:'';
- box.innerHTML=head(x,cur)+list+hideBtn+planBtn+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
+ const metroBtn=`<button type="button" class="btn" data-a="metromaps">地鐵圖片查看</button>`;
+ box.innerHTML=head(x,cur)+list+metroBtn+hideBtn+planBtn+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
 function renderEdit(){const x=draft;
  box.innerHTML=`<div class="banner">後台編輯模式 · DAY ${cur+1} ${esc(x.d)}</div>
  <div class="row"><label>標題<input data-f="title" value="${esc(x.title)}"></label><label>地區標籤<input data-f="c" value="${esc(x.c)}"></label></div>
