@@ -125,6 +125,9 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd .ootd-card .om .badge{font-size:10px;padding:1px 7px;letter-spacing:.06em}
 #ootd .ootd-card .on{margin-top:5px;font-size:12px;line-height:1.4;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #ootd .ootd-card .tbd{margin:4px 0 0;padding:0;font-size:11px}
+#ootd .ootd-dayimgs{display:flex;gap:4px;overflow-x:auto;margin-top:7px;padding-bottom:1px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+#ootd .ootd-dayimgs::-webkit-scrollbar{display:none;width:0;height:0}
+#ootd .ootd-dayimgs img{flex:0 0 auto;width:36px;height:36px;object-fit:cover;border-radius:7px;background:var(--bg2);cursor:zoom-in;display:block}
 .stay-home{margin:0 0 8px}
 .stay-home .bar{margin-top:10px;justify-content:flex-end}
 .shcat{margin:0 0 22px}.shcat .chd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
@@ -228,6 +231,8 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 #ootd .ootd-card .sb{padding:8px 9px 9px}
 #ootd .ootd-card .od{font-size:15px}
 #ootd .ootd-card .on{font-size:11px;-webkit-line-clamp:2}
+#ootd .ootd-dayimgs{gap:3px;margin-top:6px}
+#ootd .ootd-dayimgs img{width:30px;height:30px;border-radius:6px}
 .tabs{gap:6px;padding:2px 0 8px}
 .tab{border-radius:10px;padding:5px 10px;font-size:11px}
 .tab b{font-size:16px}
@@ -522,7 +527,7 @@ function renderEdit(){const x=draft;
  <div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}
  <button class="btn" data-a="add">＋ 新增行程</button>
  <div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span id="msg"></span></div>`}
-function show(i){cur=i;renderTabs();edit?renderEdit():renderView()}
+function show(i){cur=i;renderTabs();edit?renderEdit():renderView();try{if(typeof OOTD!=='undefined'&&OOTD&&!OOTD.d)OOTD.render()}catch(e){}}
 let daySaveTimer=null;
 async function saveDayDraft(showDone){if(!edit||!draft)return;const m=document.getElementById('msg');if(m)m.textContent='儲存到雲端中…';
  try{const items=draft.items.filter(o=>o.n.trim()||o.m.trim()||o.img);
@@ -954,6 +959,17 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  };
  box.addEventListener('click',e=>{if(e.target.closest('[data-a="viewall"]')&&typeof openSec==='function')openSec('s-stay',true)});
 })();
+function mdKey(s){const m=String(s||'').match(/(\d{1,2})\D+(\d{1,2})/);return m?`${+m[1]}/${+m[2]}`:''}
+function dayImgsForDate(date){
+ const key=mdKey(String(date||'').includes('-')?String(date).slice(5):date);
+ if(!key)return[];
+ const day=(DAYS||[]).find(d=>mdKey(d.d)===key);if(!day)return[];
+ return(day.items||[]).map(it=>it&&it.img).filter(id=>id&&blobSrc(id));
+}
+function ootdDayStrip(date){
+ const imgs=dayImgsForDate(date);if(!imgs.length)return'';
+ return`<div class="ootd-dayimgs">${imgs.map(id=>`<img class="zoom" src="${blobSrc(id)}" alt="" loading="lazy">`).join('')}</div>`;
+}
 const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:true,
  groups:[['imgs','新增穿搭照（可多張，不會覆蓋）']],
  def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,place:'',temp:'',note:'',imgs:[]})),
@@ -961,7 +977,7 @@ const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:
  fields:[['date','日期','date','sm'],['place','地點／天氣','text',''],['temp','氣溫','text','sm'],['note','穿搭說明','ta']],
  clean:L=>[...L].map(r=>({...r,imgs:asImgs(r.imgs)})).sort((a,b)=>String(a.date).localeCompare(String(b.date))),
  view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';const tags=[r.temp,r.place].filter(Boolean).map(t=>`<span class="badge">${esc(t)}</span>`).join('');
-  return `<div class="card ootd-card">${mediaRail(asImgs(r.imgs),'')}<div class="sb"><div class="od">${esc(String(r.date).slice(5).replace('-','/'))}${w?`<small>${w}</small>`:''}</div>${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:'<div class="tbd">尚未寫穿搭</div>'}</div></div>`}});
+  return `<div class="card ootd-card">${mediaRail(asImgs(r.imgs),'')}<div class="sb"><div class="od">${esc(String(r.date).slice(5).replace('-','/'))}${w?`<small>${w}</small>`:''}</div>${ootdDayStrip(r.date)}${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:'<div class="tbd">尚未寫穿搭</div>'}</div></div>`}});
 const JNL=mkList({box:'jnl',doc:'journal',title:'旅途手記',noun:'一天',big:true,
  groups:[['stubs','票根／紀念章照片（可多選）'],['imgs','今日相片（可多選）']],
  def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,weather:'',temp:'',hl:'',hlnote:'',surprise:'',mood:'',stubs:[],imgs:[]})),
@@ -1046,7 +1062,7 @@ function applyStore(){const daysS=STORE.days||{};Object.keys(daysS).forEach(id=>
  if(d){d.collection('days').onSnapshot(sn=>{sn.docs.forEach(doc=>{const k=+doc.id.slice(1),v=doc.data();
   if(DAYS[k]&&v&&!(edit&&k===cur))DAYS[k]={...DAYS[k],title:v.title,c:v.c,items:keepImgs(k,v.items)}});
   const spotCh=refreshSpotImgs();
-  renderTabs();if(!edit)renderView();if(spotCh)renderWish()},()=>{})}
+  renderTabs();if(!edit)renderView();if(spotCh)renderWish();try{if(typeof OOTD!=='undefined'&&OOTD&&!OOTD.d)OOTD.render()}catch(e){}},()=>{})}
  await refreshAllBlobs();
  }catch(e){booted=true;try{await hydrateBlobs();await remotePull(true);applyStore();paintBlobs();await refreshAllBlobs()}catch(e2){setSync('啟動同步失敗',false)}}})();
 /* 同步啟動前先畫文字骨架；圖片等 hydrate 後由上面補上 */
