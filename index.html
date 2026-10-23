@@ -170,6 +170,12 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .dl button.act .ico-snow{opacity:1}
 .sec{display:none}.sec.on{display:block}
 .tl li.hasimg{display:flex;gap:12px;align-items:flex-start}.tl .tx{flex:1;min-width:0}
+.tl .tr{padding:2px 0 14px 14px;list-style:none}
+.tl .tr::before{content:"";position:absolute;left:-29px;top:8px;width:14px;height:14px;border-radius:50%;border:1.5px dashed var(--acc);background:var(--bg);-webkit-mask:none;mask:none}
+.tl .route{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 12px;padding:8px 12px;border-radius:10px;background:rgba(120,150,180,.1);border:1px dashed rgba(120,150,180,.35);font-size:13px;line-height:1.45;color:var(--ink)}
+.tl .route .rk{flex:0 0 auto;font-size:11px;letter-spacing:.1em;color:var(--acc)}
+.tl .route .rt{flex:1 1 160px;min-width:0;color:var(--mute)}
+.tl .route a{flex:0 0 auto;font-size:12px;color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(120,150,180,.45)}
 .ti{width:104px;height:76px;object-fit:cover;border-radius:12px;flex:0 0 auto;cursor:zoom-in;box-shadow:0 6px 16px -8px rgba(20,50,90,.45)}
 .pvd{width:140px;height:100px;object-fit:cover;border-radius:12px;display:block;margin:4px 0}
 @media(max-width:420px){.ti{width:84px;height:64px}}
@@ -247,6 +253,10 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .tl li::before{left:-23px;top:1px;width:12px;height:12px}
 .tl .t{font-size:13px}.tl .m{font-size:12px}
 .tl li.hasimg{gap:8px}
+.tl .tr{padding:0 0 10px 10px}
+.tl .tr::before{left:-23px;top:6px;width:12px;height:12px}
+.tl .route{padding:7px 10px;font-size:12px;gap:6px 10px;border-radius:8px}
+.tl .route .rk{font-size:10px}
 .ti{width:72px;height:54px;border-radius:8px}
 .wish{gap:8px;grid-template-columns:1fr}
 .wish h4{margin:0 0 6px;font-size:13px;letter-spacing:.1em}
@@ -517,14 +527,44 @@ function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.cr
  b.innerHTML=`<span class="c">DAY ${i+1}</span><b>${esc(x.d)}</b><span class="c">${esc(x.c)}</span>`;
  b.onclick=()=>{edit=false;draft=null;show(i)};tabs.appendChild(b)})}
 function head(x,i){return `<div class="dayhead"><h3>${esc(x.title)}</h3><span class="badge">DAY ${i+1} · ${esc(x.d)}（${esc(x.w)}）</span></div>`}
+function routeEndpoint(n){const s=String(n||'').trim();if(!s)return'';const parts=s.split(/\s*[→\-–—>]+\s*/).map(x=>x.trim()).filter(Boolean);return parts.length?parts[parts.length-1]:s}
+function mapsTransitUrl(a,b,area){const o=[a,area].filter(Boolean).join(' ');const d=[b,area].filter(Boolean).join(' ');return`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(o)}&destination=${encodeURIComponent(d)}&travelmode=transit`}
+function placeKey(n){return String(routeEndpoint(n)||'').toLowerCase().replace(/\s+/g,'').replace(/[・·]/g,'')}
+/* 11/26 札幌測試用：依景點名稱給常見大眾運輸／步行建議（可再手動改） */
+const ROUTE_HINTS={
+ '新千歲機場|二條市場':'JR 快速 Airport → 札幌站（約 37 分），轉地下鐵南北線到「大通」站，34 出口步行約 5 分。行李多可改機場巴士到札幌駅前。',
+ '新千歳空港|二條市場':'JR 快速 Airport → 札幌站（約 37 分），轉地下鐵南北線到「大通」站，34 出口步行約 5 分。',
+ '二條市場|狸小路商店街':'兩地很近，步行約 1–3 分即可（往狸小路 1 丁目方向）。下雪也可走騎樓／地下街。',
+ '狸小路商店街|中島公園':'步行至地下鐵「すすきの」站，搭南北線 1 站到「中島公園」站，出站即達（車程約 2–3 分）。',
+ '中島公園|大通公園':'地下鐵南北線「中島公園」→「大通」約 4 分；或沿公園／創成川方向步行約 15–20 分。',
+ '大通公園|薄野':'步行約 10–12 分往南；或地下鐵南北線「大通」→「すすきの」1 站。'
+};
+function lookupRouteHint(a,b){const ka=placeKey(a),kb=placeKey(b);if(!ka||!kb)return'';
+ const hit=Object.keys(ROUTE_HINTS).find(k=>{const[x,y]=k.split('|');return placeKey(x)===ka&&placeKey(y)===kb});
+ if(hit)return ROUTE_HINTS[hit];
+ /* 寬鬆包含比對（二條／二条、薄野／すすきの） */
+ const soft=Object.keys(ROUTE_HINTS).find(k=>{const[x,y]=k.split('|');return(ka.includes(placeKey(x))||placeKey(x).includes(ka))&&(kb.includes(placeKey(y))||placeKey(y).includes(kb))});
+ return soft?ROUTE_HINTS[soft]:''}
+function buildRouteBetween(prevName,nextName,area){
+ const a=routeEndpoint(prevName),b=routeEndpoint(nextName);if(!a||!b)return null;
+ const hint=lookupRouteHint(a,b)||`建議以大眾運輸前往：${a} → ${b}（詳見地圖；可再手動補正）`;
+ return{route:hint,routeUrl:mapsTransitUrl(a,b,area||'札幌')}}
+function planRoutesForDay(day){if(!day||!Array.isArray(day.items))return 0;let n=0;const area=day.c||'';
+ for(let i=1;i<day.items.length;i++){const prev=day.items[i-1],it=day.items[i];const a=routeEndpoint(prev&&prev.n),b=routeEndpoint(it&&it.n);if(!a||!b)continue;
+  const built=buildRouteBetween(a,b,area);if(!built)continue;it.route=built.route;it.routeUrl=built.routeUrl;n++}return n}
+function routeHTML(o){if(!o||(!o.route&&!o.routeUrl))return'';
+ return`<li class="tr"><div class="route"><span class="rk">交通</span><span class="rt">${esc(o.route||'查看地圖路線')}</span>${o.routeUrl?`<a href="${esc(o.routeUrl)}" target="_blank" rel="noopener">地圖開啟</a>`:''}</div></li>`}
 function renderView(){const x=DAYS[cur];
- const list=x.items.length?`<ul class="tl">${x.items.map(o=>`<li class="${blobSrc(o.img)?'hasimg':''}">${blobSrc(o.img)?`<img class="ti" src="${blobSrc(o.img)}" alt="${esc(o.n)}" loading="lazy">`:''}<div class="tx">${o.t?`<div class="t">${esc(o.t)}</div>`:''}<div class="n">${esc(o.n)}</div>${o.m?`<div class="m">${esc(o.m)}</div>`:''}</div></li>`).join('')}</ul>`:'<div class="tbd">這天還沒有行程…</div>';
- box.innerHTML=head(x,cur)+list+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
+ const list=x.items.length?`<ul class="tl">${x.items.map((o,i)=>`${i>0?routeHTML(o):''}<li class="${blobSrc(o.img)?'hasimg':''}">${blobSrc(o.img)?`<img class="ti" src="${blobSrc(o.img)}" alt="${esc(o.n)}" loading="lazy">`:''}<div class="tx">${o.t?`<div class="t">${esc(o.t)}</div>`:''}<div class="n">${esc(o.n)}</div>${o.m?`<div class="m">${esc(o.m)}</div>`:''}</div></li>`).join('')}</ul>`:'<div class="tbd">這天還沒有行程…</div>';
+ const canPlan=canEdit&&x.items&&x.items.length>1;
+ const planBtn=canPlan?`<button class="btn" data-a="planroutes">${String(x.d).includes('11/26')?'測試：自動規劃今日路線':'自動規劃今日路線'}</button>`:'';
+ box.innerHTML=head(x,cur)+list+planBtn+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
 function renderEdit(){const x=draft;
  box.innerHTML=`<div class="banner">後台編輯模式 · DAY ${cur+1} ${esc(x.d)}</div>
  <div class="row"><label>標題<input data-f="title" value="${esc(x.title)}"></label><label>地區標籤<input data-f="c" value="${esc(x.c)}"></label></div>
  ${x.items.map((o,i)=>`<div class="item" data-i="${i}"><div class="row"><label class="sm">時間<input data-f="t" value="${esc(o.t)}" placeholder="09:00"></label><label>地點／活動<input data-f="n" value="${esc(o.n)}"></label></div>
  <label>備註<input data-f="m" value="${esc(o.m)}" placeholder="交通、餐廳、預約…"></label>
+ ${i>0?`<label>如何到達這裡（自動規劃可填）<textarea data-f="route" placeholder="例如：地下鐵南北線…">${esc(o.route||'')}</textarea></label><label>地圖連結<input data-f="routeUrl" value="${esc(o.routeUrl||'')}" placeholder="https://www.google.com/maps/dir/…"></label>`:''}
  ${blobSrc(o.img)?`<img class="pvd" src="${blobSrc(o.img)}" alt="">`:''}<label>${o.img?'更換圖片':'上傳圖片'}<input type="file" accept="image/*" data-up="1"></label>${o.img?'<button class="btn s" data-a="rmimg">移除圖片</button>':''}
  <div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}
  <button class="btn" data-a="add">＋ 新增行程</button>
@@ -532,19 +572,24 @@ function renderEdit(){const x=draft;
 function show(i){cur=i;renderTabs();edit?renderEdit():renderView();try{if(typeof OOTD!=='undefined'&&OOTD&&!OOTD.d)OOTD.render()}catch(e){}}
 let daySaveTimer=null;
 async function saveDayDraft(showDone){if(!edit||!draft)return;const m=document.getElementById('msg');if(m)m.textContent='儲存到雲端中…';
- try{const items=draft.items.filter(o=>o.n.trim()||o.m.trim()||o.img);
+ try{const items=draft.items.filter(o=>o.n.trim()||o.m.trim()||o.img||o.route);
   await db.collection('days').doc('d'+cur).set({title:draft.title,c:draft.c,items});
   DAYS[cur]={...DAYS[cur],title:draft.title,c:draft.c,items:JSON.parse(JSON.stringify(items))};
   if(showDone){edit=false;draft=null;show(cur);setSync('行程已存上雲端',true)}
   else if(m)m.textContent='已存上雲端'}
  catch(err){if(m)m.textContent='儲存失敗：'+(err&&err.message||'請稍後再試');setSync('儲存失敗',false)}}
+async function saveDayRoutes(dayIndex){const day=DAYS[dayIndex];if(!day)return false;
+ try{await db.collection('days').doc('d'+dayIndex).set({title:day.title,c:day.c,items:day.items});setSync('路線已存上雲端',true);return true}
+ catch(err){setSync('路線儲存失敗',false);return false}}
 box.addEventListener('input',e=>{if(!edit)return;const f=e.target.dataset.f,it=e.target.closest('.item');
  if(!f)return;if(it)draft.items[+it.dataset.i][f]=e.target.value;else draft[f]=e.target.value;
  clearTimeout(daySaveTimer);daySaveTimer=setTimeout(()=>saveDayDraft(false),1200)});
 box.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;const it=e.target.closest('.item'),i=it?+it.dataset.i:-1;
+ if(a==='planroutes'){const day=DAYS[cur];if(!day||edit)return;const btn=e.target;btn.disabled=true;btn.textContent='規劃中…';
+  const n=planRoutesForDay(day);await saveDayRoutes(cur);renderView();setSync(n?`已規劃 ${n} 段路線（可再手動修改）`:'找不到可規劃的景點對',!!n);return}
  if(a==='edit'){draft=JSON.parse(JSON.stringify(DAYS[cur]));edit=true;return renderEdit()}
  if(a==='cancel'){edit=false;draft=null;return renderView()}
- if(a==='add'){draft.items.push({t:'',n:'',m:''});return renderEdit()}
+ if(a==='add'){draft.items.push({t:'',n:'',m:'',route:'',routeUrl:''});return renderEdit()}
  if(a==='del'){draft.items.splice(i,1);return renderEdit()}
  if(a==='rmimg'){draft.items[i].img='';return renderEdit()}
  if(a==='up'&&i>0){[draft.items[i-1],draft.items[i]]=[draft.items[i],draft.items[i-1]];return renderEdit()}
