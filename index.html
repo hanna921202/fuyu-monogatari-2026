@@ -149,7 +149,30 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd .ootd-dayimgs::-webkit-scrollbar{display:none;width:0;height:0}
 #ootd .ootd-dayimgs img{flex:0 0 auto;width:36px;height:36px;object-fit:cover;border-radius:7px;background:var(--bg2);cursor:zoom-in;display:block}
 .stay-home{margin:0 0 8px}
-.stay-home .bar{margin-top:10px;justify-content:flex-end}
+.stay-home .bar{margin-top:8px;justify-content:flex-end}
+.stay-home .more{font:inherit;font-size:13px;color:var(--acc);background:none;border:0;padding:0;margin:0;cursor:pointer;letter-spacing:.12em;display:inline-flex;align-items:center;gap:4px;opacity:.92}
+.stay-home .more:hover{opacity:1}
+.stay-home .more .arr{font-size:12px;letter-spacing:0;transition:transform .18s ease}
+.stay-home .more:hover .arr{transform:translateX(3px)}
+#stay .stay-card{display:grid;grid-template-columns:minmax(110px,168px) minmax(0,1fr);align-items:stretch;margin:0 0 10px;padding:0;overflow:hidden;border-radius:12px}
+#stay .stay-card .sp-media,#stay .stay-card>.ph{height:100%;min-height:0}
+#stay .stay-card .sp-rail{height:100%}
+#stay .stay-card .sp-rail img,#stay .stay-card>.ph{aspect-ratio:auto;height:100%;min-height:120px;max-height:168px;object-fit:cover}
+#stay .stay-card>.ph{font-size:26px}
+#stay .stay-card .sb{padding:10px 14px 12px;display:flex;flex-direction:column;gap:4px;justify-content:center}
+#stay .stay-card .dayhead{margin:0 0 2px;gap:6px}
+#stay .stay-card .dayhead h3{font-size:15px;letter-spacing:.08em;line-height:1.35}
+#stay .stay-card .badge{font-size:10px;padding:1px 8px}
+#stay .stay-card .meta{font-size:12px;color:var(--mute);line-height:1.45}
+#stay .stay-card .rowline{font-size:12.5px;line-height:1.45}
+#stay .stay-card .chips{margin-top:4px;gap:5px}
+#stay .stay-card .chips span{font-size:11px;padding:1px 8px}
+#stay .stay-card .note{white-space:pre-wrap;margin-top:4px;font-size:12.5px;line-height:1.5;color:var(--mute)}
+@media(max-width:560px){
+#stay .stay-card{grid-template-columns:1fr}
+#stay .stay-card .sp-rail img,#stay .stay-card>.ph{aspect-ratio:2/1;height:auto;min-height:0;max-height:132px}
+#stay .stay-card .sb{padding:9px 12px 11px}
+}
 .shcat{margin:0 0 22px}.shcat .chd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
 .shcat .chd h4{margin:0;color:var(--acc);letter-spacing:.15em;font-size:16px}
 .shcat .chd .meta{font-size:12px;color:var(--mute)}
@@ -254,6 +277,7 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .fl .mx .seats{font-size:14px}
 .fl .nt{font-size:11px;margin-top:4px}
 .wish .card,.pk .card,#stay .card,#day.card,#cur .card,#acct .card,#jnl .card{padding:10px 12px;border-radius:10px}
+#stay .stay-card{padding:0;border-radius:10px}
 #ootd{gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
 #ootd .ootd-card{border-radius:10px}
 #ootd .ootd-card .sb{padding:8px 9px 9px}
@@ -1110,7 +1134,7 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  extraIn:(t,r)=>{const m=t.closest('.amr');if(!m)return;const a=r.am[+m.dataset.m];if(t.dataset.mf==='has')a.has=t.checked;else if(t.dataset.mf==='n')a.n=t.value},
  extraClk:(a,t,r)=>{if(a==='addam')r.am.push({n:'',has:false});else if(a==='delam')r.am.splice(+t.closest('.amr').dataset.m,1)},
  view:r=>{const n=r.cin&&r.cout?Math.round((new Date(r.cout)-new Date(r.cin))/864e5):0,dd=s=>s?s.slice(5).replace('-','/'):'';
-  return `<div class="card sp" style="margin-bottom:14px">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="dayhead"><h3 style="font-size:19px">${esc(r.name)||'（尚未填寫住宿名稱）'}</h3>${r.area?`<span class="badge">${esc(r.area)}</span>`:''}</div><div style="color:var(--mute)">${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}${r.tin?'　入住 '+esc(r.tin):''}${r.tout?'　退房 '+esc(r.tout):''}</div>${r.addr?`<div>📍 ${esc(r.addr)}</div>`:''}${r.tel?`<div>☎ ${esc(r.tel)}</div>`:''}${r.bk?`<div>訂單編號：${esc(r.bk)}</div>`:''}${(r.am||[]).length?`<div class="chips" style="margin-top:8px">${r.am.map(a=>`<span class="${a.has?'am on':'am'}">${a.has?'✓':'✕'} ${esc(a.n)}</span>`).join('')}</div>`:''}${r.note?`<div style="white-space:pre-wrap;margin-top:10px">${esc(r.note)}</div>`:''}</div></div>`}});
+  return `<div class="card sp stay-card">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="dayhead"><h3>${esc(r.name)||'（尚未填寫住宿名稱）'}</h3>${r.area?`<span class="badge">${esc(r.area)}</span>`:''}</div><div class="meta">${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}${r.tin?'　入住 '+esc(r.tin):''}${r.tout?'　退房 '+esc(r.tout):''}</div>${r.addr?`<div class="rowline">📍 ${esc(r.addr)}</div>`:''}${r.tel?`<div class="rowline">☎ ${esc(r.tel)}</div>`:''}${r.bk?`<div class="rowline">訂單編號：${esc(r.bk)}</div>`:''}${(r.am||[]).length?`<div class="chips">${r.am.map(a=>`<span class="${a.has?'am on':'am'}">${a.has?'✓':'✕'} ${esc(a.n)}</span>`).join('')}</div>`:''}${r.note?`<div class="note">${esc(r.note)}</div>`:''}</div></div>`}});
 (()=>{const full=STAY.render,box=document.getElementById('stay'),dd=s=>s?s.slice(5).replace('-','/'):'';
  STAY.render=function(){
   if(STAY.d)return full();
@@ -1120,7 +1144,7 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
     const meta=[r.area,r.cin||r.cout?`${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}`:''].filter(Boolean).join(' · ');
     return `<div class="card sp">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="n">${esc(r.name)||'（尚未填寫住宿名稱）'}</div><div class="m">${esc(meta)}</div></div></div>`;
    }).join(''):'';
-   box.innerHTML=`<div class="stay-home">${cards?`<div class="srow">${cards}</div>`:'<div class="card tbd" style="margin:0">尚未新增住宿</div>'}<div class="bar"><button class="more" type="button" data-a="viewall">查看所有住宿 →</button></div></div>`;
+   box.innerHTML=`<div class="stay-home">${cards?`<div class="srow">${cards}</div>`:'<div class="card tbd" style="margin:0">尚未新增住宿</div>'}<div class="bar"><button class="more" type="button" data-a="viewall">查看所有住宿 <span class="arr" aria-hidden="true">→</span></button></div></div>`;
    return;
   }
   full();
