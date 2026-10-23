@@ -46,8 +46,26 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .tab b{display:block;font-family:"Cormorant Garamond",serif;font-size:20px;font-weight:400}
 .tab[aria-selected=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
 .tab .c{font-size:11px;opacity:.75}
-.dayhead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.dayhead{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.dayhead .dh-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;min-width:0;flex:1}
 .dayhead h3{margin:0;font-size:22px;letter-spacing:.1em}
+.dayhead .metro-btn{margin:0;flex:0 0 auto;white-space:nowrap;font-size:12px;padding:4px 10px}
+#metrolb{position:fixed;inset:0;z-index:65;background:rgba(5,12,22,.82);display:none;align-items:center;justify-content:center;padding:16px}
+#metrolb.on{display:flex}
+#metrolb .metro-panel{width:min(920px,100%);max-height:min(88vh,900px);background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:12px 12px 14px;box-shadow:0 18px 40px -20px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:8px}
+#metrolb .metro-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#metrolb .metro-top b{font-size:14px;letter-spacing:.12em;color:var(--acc);font-weight:600}
+#metrolb .metro-top .btn{margin:0}
+#metrolb .metro-rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:0;border-radius:12px;background:var(--bg2)}
+#metrolb .metro-rail::-webkit-scrollbar{display:none;width:0;height:0}
+#metrolb .metro-slide{flex:0 0 100%;width:100%;min-width:100%;scroll-snap-align:start;padding:8px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;align-items:center}
+#metrolb .metro-slide img{max-width:100%;max-height:min(62vh,620px);width:auto;height:auto;object-fit:contain;border-radius:8px;background:#fff;cursor:zoom-in}
+#metrolb .metro-slide .mt{font-size:13px;letter-spacing:.1em;color:var(--ink)}
+#metrolb .metro-slide .mc{font-size:11px;color:var(--mute);text-align:center;line-height:1.4}
+#metrolb .metro-dots{display:flex;justify-content:center;gap:6px}
+#metrolb .metro-dots i{width:7px;height:7px;border-radius:50%;background:rgba(120,150,180,.35)}
+#metrolb .metro-dots i.on{background:var(--acc)}
+#metrolb .metro-hint{text-align:center;font-size:12px;color:var(--mute);letter-spacing:.08em}
 .badge{font-size:12px;padding:2px 12px;border-radius:99px;background:var(--acc2);color:var(--ink);letter-spacing:.1em}
 .tl{list-style:none;margin:14px 0 0;padding:0 0 0 22px;border-left:1px solid var(--line)}
 .tl li{position:relative;padding:0 0 18px 14px}
@@ -245,8 +263,12 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .tab{border-radius:10px;padding:5px 10px;font-size:11px}
 .tab b{font-size:16px}
 .tab .c{font-size:10px}
-.dayhead{gap:4px;margin-bottom:4px}
+.dayhead{gap:6px;margin-bottom:4px}
 .dayhead h3{font-size:16px;letter-spacing:.06em}
+.dayhead .metro-btn{font-size:11px;padding:3px 8px}
+#metrolb{padding:10px}
+#metrolb .metro-panel{padding:10px;border-radius:12px;max-height:90vh}
+#metrolb .metro-slide img{max-height:min(58vh,520px)}
 .badge{font-size:10px;padding:1px 8px;letter-spacing:.06em}
 .tl{margin:8px 0 0;padding-left:16px}
 .tl li{padding:0 0 12px 10px}
@@ -528,7 +550,29 @@ function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.cr
  b.setAttribute('aria-selected',i===cur);
  b.innerHTML=`<span class="c">DAY ${i+1}</span><b>${esc(x.d)}</b><span class="c">${esc(x.c)}</span>`;
  b.onclick=()=>{edit=false;draft=null;show(i)};tabs.appendChild(b)})}
-function head(x,i){return `<div class="dayhead"><h3>${esc(x.title)}</h3><span class="badge">DAY ${i+1} · ${esc(x.d)}（${esc(x.w)}）</span></div>`}
+const METRO_MAPS=[
+ {id:'sapporo',title:'札幌市營地下鐵',src:'images/metro/sapporo-subway.png',credit:'地圖來源：Hiro36／Wikimedia Commons（CC BY-SA）'},
+ {id:'tokyo',title:'東京地鐵・都營',src:'images/metro/tokyo-metro.png',credit:'地圖來源：Hisagi（氷鷺）／Wikimedia Commons（CC BY-SA）'}
+];
+function metroStartIndex(day){const c=String(day&&day.c||'');const t=String(day&&day.title||'');
+ if(/東京|成田|川越|移動|蒲田|羽田|迪士尼|淺草|秋葉|原宿|新宿/.test(c+t))return 1;
+ return 0}
+function ensureMetroLb(){let box=document.getElementById('metrolb');if(box)return box;box=document.createElement('div');box.id='metrolb';document.body.appendChild(box);
+ box.addEventListener('click',e=>{if(e.target===box||e.target.closest('[data-a="closemetro"]'))box.classList.remove('on')});
+ box.addEventListener('scroll',e=>{if(e.target.classList&&e.target.classList.contains('metro-rail'))syncMetroDots(e.target)},true);
+ return box}
+function openMetroMaps(start){const box=ensureMetroLb();
+ const i0=Math.max(0,Math.min(METRO_MAPS.length-1,start|0));
+ box.innerHTML=`<div class="metro-panel" role="dialog" aria-label="地鐵圖片查看"><div class="metro-top"><b>地鐵圖片查看</b><button type="button" class="btn s" data-a="closemetro">關閉</button></div>
+ <div class="metro-rail">${METRO_MAPS.map(m=>`<div class="metro-slide"><div class="mt">${esc(m.title)}</div><img src="${esc(m.src)}" alt="${esc(m.title)}" loading="lazy"><div class="mc">${esc(m.credit)}</div></div>`).join('')}</div>
+ <div class="metro-dots">${METRO_MAPS.map((_,k)=>`<i${k===i0?' class="on"':''}></i>`).join('')}</div>
+ <div class="metro-hint">左右滑動查看全部路線圖</div></div>`;
+ box.classList.add('on');
+ const rail=box.querySelector('.metro-rail');if(rail){const go=()=>{rail.scrollLeft=rail.clientWidth*i0};requestAnimationFrame(()=>requestAnimationFrame(go))}
+}
+function syncMetroDots(rail){const box=document.getElementById('metrolb');if(!box||!rail)return;const dots=box.querySelector('.metro-dots');if(!dots)return;
+ const w=rail.clientWidth||1,i=Math.round(rail.scrollLeft/w);[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i))}
+function head(x,i){return `<div class="dayhead"><div class="dh-main"><h3>${esc(x.title)}</h3><span class="badge">DAY ${i+1} · ${esc(x.d)}（${esc(x.w)}）</span></div><button type="button" class="btn s metro-btn" data-a="metromaps">地鐵圖片查看</button></div>`}
 function routeEndpoint(n){const s=String(n||'').trim();if(!s)return'';const parts=s.split(/\s*[→\-–—>]+\s*/).map(x=>x.trim()).filter(Boolean);return parts.length?parts[parts.length-1]:s}
 function mapsTransitUrl(a,b,area){const o=[a,area].filter(Boolean).join(' ');const d=[b,area].filter(Boolean).join(' ');return`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(o)}&destination=${encodeURIComponent(d)}&travelmode=transit`}
 function placeKey(n){return String(routeEndpoint(n)||'').toLowerCase().replace(/\s+/g,'').replace(/[・·＆&／/]/g,'').replace(/神社|商店街|公園|機場|空港|溫泉|日歸泡湯|展望台賞夜景|購票與搭乘纜車|前往|返回|市區/g,'')}
@@ -635,6 +679,8 @@ box.addEventListener('input',e=>{if(!edit)return;const f=e.target.dataset.f,it=e
  if(!f)return;if(it)draft.items[+it.dataset.i][f]=e.target.value;else draft[f]=e.target.value;
  clearTimeout(daySaveTimer);daySaveTimer=setTimeout(()=>saveDayDraft(false),1200)});
 box.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;const it=e.target.closest('.item'),i=it?+it.dataset.i:-1;
+ if(a==='metromaps'){openMetroMaps(metroStartIndex(DAYS[cur]));return}
+ if(a==='closemetro'){const mb=document.getElementById('metrolb');if(mb)mb.classList.remove('on');return}
  if(a==='toggleroutes'){setShowRoutes(!showRoutes);return renderView()}
  if(a==='planroutes'){const day=DAYS[cur];if(!day||edit)return;const btn=e.target;btn.disabled=true;btn.textContent='規劃中…';
   const n=planRoutesForDay(day);setShowRoutes(true);await saveDayRoutes(cur);renderView();setSync(n?`已規劃 ${n} 段路線（可再手動修改）`:'找不到可規劃的景點對',!!n);return}
@@ -889,7 +935,8 @@ function applyImgReorder(itemEl,key,from,to){if(!itemEl||from===to)return;const 
   if(st.moved&&over&&over!==st.pvw){const item=st.item,key=st.key,from=st.from,to=+over.dataset.p;clear();applyImgReorder(item,key,from,to)}else clear()});
  document.addEventListener('pointercancel',()=>clear())})();
 function syncMediaDots(rail){const dots=rail.parentElement&&rail.parentElement.querySelector('.sp-dots');if(!dots)return;const w=rail.clientWidth||1,i=Math.round(rail.scrollLeft/w);[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i))}
-document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('sp-rail'))syncMediaDots(t)},true);
+document.addEventListener('scroll',e=>{const t=e.target;if(!t||!t.classList)return;if(t.classList.contains('sp-rail'))syncMediaDots(t);if(t.classList.contains('metro-rail'))syncMetroDots(t)},true);
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;const mbx=document.getElementById('metrolb');if(mbx&&mbx.classList.contains('on'))mbx.classList.remove('on')});
 function watchTrip(){db.collection('trip').onSnapshot(sn=>{sn.docs.forEach(doc=>{const v=doc.data()||{};
  if(doc.id==='flights'&&v.list!=null&&!eF)FL=asList(v.list).map(normFl);
  if(doc.id==='wishes'&&!eW&&!eWCat&&!eWSpot){const n=normWish(v);WCATS=cl(n.regions);WSPOTS=cl(n.spots);WL=cl(n.list)}
