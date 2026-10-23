@@ -148,6 +148,36 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd .ootd-dayimgs{display:flex;gap:4px;overflow-x:auto;margin-top:7px;padding-bottom:1px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
 #ootd .ootd-dayimgs::-webkit-scrollbar{display:none;width:0;height:0}
 #ootd .ootd-dayimgs img{flex:0 0 auto;width:36px;height:36px;object-fit:cover;border-radius:7px;background:var(--bg2);cursor:zoom-in;display:block}
+#yaku{display:flex;flex-direction:column;gap:22px}
+#yaku .yaku-block h3{margin:0 0 10px;font-size:15px;letter-spacing:.14em;color:var(--acc);font-weight:600}
+#yaku .phrase-list{display:grid;gap:8px}
+#yaku .phrase{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;gap:3px}
+#yaku .phrase .zh{font-size:13px;color:var(--mute);letter-spacing:.04em}
+#yaku .phrase .ja{font-size:16px;font-weight:600;letter-spacing:.04em;line-height:1.45}
+#yaku .phrase .ro{font-size:12px;color:var(--acc);letter-spacing:.06em;font-family:"Cormorant Garamond",var(--jp);font-style:italic}
+#yaku .yaku-box{padding:14px 16px;border-radius:14px}
+#yaku .yaku-dir{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#yaku .yaku-dir .lang{font-size:13px;letter-spacing:.1em;padding:4px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(120,150,180,.1);color:var(--ink)}
+#yaku .yaku-dir .lang.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#yaku .yaku-dir .swap{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--acc);border-radius:10px;padding:5px 12px;cursor:pointer;letter-spacing:.08em}
+#yaku .yaku-dir .swap:hover{border-color:var(--acc)}
+#yaku .yaku-io{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+#yaku .yaku-pane{display:flex;flex-direction:column;gap:6px;min-width:0}
+#yaku .yaku-pane label{margin:0;font-size:11px;letter-spacing:.12em;color:var(--mute)}
+#yaku .yaku-pane textarea{min-height:120px;margin:0;resize:vertical;line-height:1.55}
+#yaku .yaku-pane .out{background:rgba(120,150,180,.08);color:var(--ink)}
+#yaku .yaku-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:2px}
+#yaku .yaku-tools .btn{margin:0}
+#yaku .mic{display:inline-flex;align-items:center;gap:6px}
+#yaku .mic.on{background:#c0504d;color:#fff;border-color:#c0504d}
+#yaku .yaku-hint{font-size:12px;color:var(--mute);letter-spacing:.04em;margin:0;line-height:1.45}
+#yaku .yaku-status{font-size:12px;color:var(--mute);min-height:1.2em}
+@media(max-width:640px){
+#yaku .yaku-io{grid-template-columns:1fr}
+#yaku .phrase{padding:9px 11px}
+#yaku .phrase .ja{font-size:15px}
+#yaku .yaku-pane textarea{min-height:96px}
+}
 .stay-home{margin:0 0 8px}
 .stay-home .bar{margin-top:8px;justify-content:flex-end}
 .stay-home .more{font:inherit;font-size:13px;color:var(--acc);background:none;border:0;padding:0;margin:0;cursor:pointer;letter-spacing:.12em;display:inline-flex;align-items:center;gap:4px;opacity:.92}
@@ -411,6 +441,7 @@ label{font-size:11px;margin-bottom:6px}
 <section class="sec noh" id="s-acct"><h2>記帳</h2><div id="acct"></div></section>
 <section class="sec noh" id="s-ootd"><h2>每日穿搭 OOTD</h2><div id="ootd"></div></section>
 <section class="sec noh" id="s-jnl"><h2>旅途手記</h2><div id="jnl"></div></section>
+<section class="sec noh" id="s-yaku"><h2>日本語ほんやく</h2><div id="yaku"></div></section>
 </main>
 <footer>— 行程持續更新中 —</footer>
 <div id="syncbar"><div class="tx" id="sync">同步中…</div></div>
@@ -1212,7 +1243,95 @@ acBox.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if
  if(a==='undorec'&&lUndo){const cur=LG.list;LG.list=lUndo;lUndo=null;if(!await saveLG())LG.list=cur;return renderAcct()}});
 acBox.addEventListener('change',async e=>{if(e.target.id==='ab'){const old=LG.budget;LG.budget=Number(e.target.value)||0;if(!await saveLG())LG.budget=old;renderAcct()}});
 function watchLedger(){db.collection('ledger').onSnapshot(sn=>{sn.docs.forEach(doc=>{if(doc.id==='main'){const v=doc.data()||{};LG={budget:v.budget||0,list:cl(v.list||[])}}});renderAcct()},()=>{})}
-const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-acct','記帳']];
+const YAKU_PHRASES=[
+ {zh:'你好',ja:'こんにちは',ro:'Konnichiwa'},
+ {zh:'謝謝',ja:'ありがとうございます',ro:'Arigatō gozaimasu'},
+ {zh:'對不起／不好意思',ja:'すみません',ro:'Sumimasen'},
+ {zh:'請多指教／麻煩你了',ja:'お願いします',ro:'Onegaishimasu'},
+ {zh:'多少錢？',ja:'いくらですか？',ro:'Ikura desu ka?'},
+ {zh:'這個請給我',ja:'これをください',ro:'Kore o kudasai'},
+ {zh:'洗手間在哪裡？',ja:'トイレはどこですか？',ro:'Toire wa doko desu ka?'},
+ {zh:'我不會說日語',ja:'日本語が話せません',ro:'Nihongo ga hanasemasen'},
+ {zh:'會說中文嗎？',ja:'中国語が話せますか？',ro:'Chūgokugo ga hanasemasu ka?'},
+ {zh:'請再說一次',ja:'もう一度お願いします',ro:'Mō ichido onegaishimasu'},
+ {zh:'好吃！',ja:'おいしいです！',ro:'Oishii desu!'},
+ {zh:'請結帳',ja:'お会計をお願いします',ro:'Okaikei o onegaishimasu'},
+ {zh:'有中文菜單嗎？',ja:'中国語のメニューはありますか？',ro:'Chūgokugo no menyū wa arimasu ka?'},
+ {zh:'我想去這裡（指地圖）',ja:'ここに行きたいです',ro:'Koko ni ikitai desu'},
+ {zh:'可以拍照嗎？',ja:'写真を撮ってもいいですか？',ro:'Shashin o totte mo ii desu ka?'},
+ {zh:'我有預約',ja:'予約しています',ro:'Yoyaku shiteimasu'},
+ {zh:'很好吃，謝謝款待',ja:'ごちそうさまでした',ro:'Gochisōsama deshita'},
+ {zh:'在哪裡換車？',ja:'どこで乗り換えですか？',ro:'Doko de norikae desu ka?'}
+];
+const yakuBox=document.getElementById('yaku');
+let yakuDir='zh-ja',yakuRec=null,yakuListening=false,yakuBusy=false;
+function yakuLangMeta(){return yakuDir==='zh-ja'?{from:'zh-TW',to:'ja',fromLabel:'中文',toLabel:'日文',speech:'zh-TW'}:{from:'ja',to:'zh-TW',fromLabel:'日文',toLabel:'中文',speech:'ja-JP'}}
+async function yakuTranslate(text,from,to){
+ const q=String(text||'').trim();if(!q)return '';
+ const gtx=`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(from==='zh-TW'?'zh-TW':from)}&tl=${encodeURIComponent(to==='zh-TW'?'zh-TW':to)}&dt=t&q=${encodeURIComponent(q)}`;
+ try{const r=await fetch(gtx);if(!r.ok)throw 0;const j=await r.json();const out=(j&&j[0]||[]).map(x=>x&&x[0]).filter(Boolean).join('');if(out)return out}catch(e){}
+ const pair=`${from==='zh-TW'?'zh-CN':from}|${to==='zh-TW'?'zh-TW':to}`;
+ const mm=`https://api.mymemory.translated.net/get?q=${encodeURIComponent(q)}&langpair=${encodeURIComponent(pair)}`;
+ const r2=await fetch(mm);const j2=await r2.json();const out2=j2&&j2.responseData&&j2.responseData.translatedText;if(!out2)throw new Error('translate failed');return out2}
+function yakuStopMic(){try{if(yakuRec)yakuRec.stop()}catch(e){}yakuListening=false;const b=yakuBox&&yakuBox.querySelector('[data-a="yakumic"]');if(b)b.classList.remove('on')}
+function renderYaku(){
+ if(!yakuBox)return;
+ const m=yakuLangMeta();
+ const phrases=YAKU_PHRASES.map(p=>`<div class="phrase"><div class="zh">${esc(p.zh)}</div><div class="ja">${esc(p.ja)}</div><div class="ro">${esc(p.ro)}</div></div>`).join('');
+ yakuBox.innerHTML=`<div class="yaku-block"><h3>常用日語</h3><div class="phrase-list">${phrases}</div></div>
+ <div class="yaku-block"><h3>中日互譯</h3><div class="card yaku-box">
+  <div class="yaku-dir"><span class="lang${yakuDir==='zh-ja'?' on':''}">中文</span><button type="button" class="swap" data-a="yakuswap" title="切換方向">⇄ 切換</button><span class="lang${yakuDir==='ja-zh'?' on':''}">日文</span></div>
+  <div class="yaku-io">
+   <div class="yaku-pane"><label>輸入（${esc(m.fromLabel)}）</label><textarea id="yaku-in" placeholder="輸入文字，或按麥克風錄音轉文字…"></textarea>
+    <div class="yaku-tools"><button type="button" class="btn pri" data-a="yakugo">翻譯</button><button type="button" class="btn mic" data-a="yakumic" title="語音輸入">🎤 錄音打字</button><button type="button" class="btn s" data-a="yakuclear">清除</button></div>
+   </div>
+   <div class="yaku-pane"><label>結果（${esc(m.toLabel)}）</label><textarea id="yaku-out" class="out" readonly placeholder="翻譯結果會顯示在這裡"></textarea>
+    <div class="yaku-tools"><button type="button" class="btn s" data-a="yakucopy">複製結果</button></div>
+   </div>
+  </div>
+  <p class="yaku-hint">錄音打字需使用 Chrome／Edge，並允許麥克風權限；語音語言會依目前翻譯方向自動切換（中文↔日文）。</p>
+  <div class="yaku-status" id="yaku-st"></div>
+ </div></div>`;
+ if(yakuListening){const b=yakuBox.querySelector('[data-a="yakumic"]');if(b)b.classList.add('on')}
+}
+async function yakuDoTranslate(){
+ const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');
+ if(!inp||!out)return;const text=inp.value.trim();if(!text){if(st)st.textContent='請先輸入文字或錄音';return}
+ if(yakuBusy)return;yakuBusy=true;if(st)st.textContent='翻譯中…';
+ try{const m=yakuLangMeta();out.value=await yakuTranslate(text,m.from,m.to);if(st)st.textContent='完成'}catch(e){if(st)st.textContent='翻譯失敗，請稍後再試';}finally{yakuBusy=false}
+}
+function yakuToggleMic(){
+ const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
+ const st=document.getElementById('yaku-st'),btn=yakuBox&&yakuBox.querySelector('[data-a="yakumic"]');
+ if(!Rec){if(st)st.textContent='此瀏覽器不支援語音輸入，請改用 Chrome／Edge';return}
+ if(yakuListening){yakuStopMic();if(st)st.textContent='已停止錄音';return}
+ yakuStopMic();
+ yakuRec=new Rec();const m=yakuLangMeta();
+ yakuRec.lang=m.speech;yakuRec.interimResults=true;yakuRec.continuous=false;
+ yakuRec.onstart=()=>{yakuListening=true;if(btn)btn.classList.add('on');if(st)st.textContent=`正在聽取${m.fromLabel}…`};
+ yakuRec.onerror=e=>{yakuListening=false;if(btn)btn.classList.remove('on');if(st)st.textContent=e.error==='not-allowed'?'請允許麥克風權限':'語音辨識失敗，請再試一次'};
+ yakuRec.onend=()=>{yakuListening=false;if(btn)btn.classList.remove('on');if(st&&/聽取/.test(st.textContent||''))st.textContent='錄音結束'};
+ yakuRec.onresult=ev=>{
+  let final='',interim='';
+  for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)final+=t;else interim+=t}
+  const inp=document.getElementById('yaku-in');if(!inp)return;
+  if(final){inp.value=(inp.value?inp.value.replace(/\s+$/,'')+' ':'')+final.trim();if(st)st.textContent='已轉成文字，可再按翻譯'}
+  else if(interim&&st)st.textContent='辨識中：'+interim;
+ };
+ try{yakuRec.start()}catch(e){if(st)st.textContent='無法啟動麥克風'}
+}
+if(yakuBox){
+ renderYaku();
+ yakuBox.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a;
+  if(a==='yakuswap'){const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out');const iv=inp?inp.value:'',ov=out?out.value:'';yakuStopMic();yakuDir=yakuDir==='zh-ja'?'ja-zh':'zh-ja';renderYaku();const inp2=document.getElementById('yaku-in'),out2=document.getElementById('yaku-out');if(inp2)inp2.value=ov||iv;if(out2)out2.value=ov?iv:'';return}
+  if(a==='yakugo'){yakuDoTranslate();return}
+  if(a==='yakumic'){yakuToggleMic();return}
+  if(a==='yakuclear'){const inp=document.getElementById('yaku-in'),out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');if(inp)inp.value='';if(out)out.value='';if(st)st.textContent='';return}
+  if(a==='yakucopy'){const out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');if(!out||!out.value)return;try{await navigator.clipboard.writeText(out.value);if(st)st.textContent='已複製'}catch(err){out.select();if(st)st.textContent='請手動複製'}}
+ });
+}
+const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-yaku','日本語ほんやく'],['s-acct','記帳']];
 const dr=document.getElementById('drawer'),mb=document.getElementById('mb'),goHome=document.getElementById('goHome');
 let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">${SNOW_ICO}<span>${t}</span></button>`).join('')}buildMenu();
 function validSec(id){return SECS.some(([s])=>s===id&&(s!=='s-acct'||canEdit))}
