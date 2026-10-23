@@ -599,7 +599,6 @@ function buildRouteBetween(prevName,nextName,day){
 function planRoutesForDay(day){if(!day||!Array.isArray(day.items))return 0;let n=0;
  for(let i=1;i<day.items.length;i++){const prev=day.items[i-1],it=day.items[i];const a=routeEndpoint(prev&&prev.n),b=routeEndpoint(it&&it.n);if(!a||!b)continue;
   const built=buildRouteBetween(a,b,day);if(!built)continue;it.route=built.route;it.routeUrl=built.routeUrl;n++}return n}
-async function planRoutesAllDays(){let total=0;for(let i=0;i<DAYS.length;i++){total+=planRoutesForDay(DAYS[i]);await saveDayRoutes(i)}return total}
 function routeHTML(o){if(!showRoutes||!o||(!o.route&&!o.routeUrl))return'';
  return`<li class="tr"><div class="route"><span class="rk">交通</span><span class="rt">${esc(o.route||'查看地圖路線')}</span>${o.routeUrl?`<a href="${esc(o.routeUrl)}" target="_blank" rel="noopener">地圖開啟</a>`:''}</div></li>`}
 function dayHasRoutes(day){return !!(day&&day.items&&day.items.some(o=>o&&(o.route||o.routeUrl)))}
@@ -608,7 +607,7 @@ function renderView(){const x=DAYS[cur];
  const canPlan=canEdit&&x.items&&x.items.length>1;
  const hasR=dayHasRoutes(x);
  const hideBtn=hasR?`<button class="btn" data-a="toggleroutes">${showRoutes?'隱藏路線':'顯示路線'}</button>`:'';
- const planBtn=canPlan?`<button class="btn" data-a="planroutes">自動規劃今日路線</button><button class="btn" data-a="planall">規劃全部天數</button>`:'';
+ const planBtn=canPlan?`<button class="btn" data-a="planroutes">自動規劃今日路線</button>`:'';
  box.innerHTML=head(x,cur)+list+hideBtn+planBtn+(canEdit?'<button class="btn" data-a="edit">✎ 編輯這一天</button>':'')}
 function renderEdit(){const x=draft;
  box.innerHTML=`<div class="banner">後台編輯模式 · DAY ${cur+1} ${esc(x.d)}</div>
@@ -639,8 +638,6 @@ box.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;c
  if(a==='toggleroutes'){setShowRoutes(!showRoutes);return renderView()}
  if(a==='planroutes'){const day=DAYS[cur];if(!day||edit)return;const btn=e.target;btn.disabled=true;btn.textContent='規劃中…';
   const n=planRoutesForDay(day);setShowRoutes(true);await saveDayRoutes(cur);renderView();setSync(n?`已規劃 ${n} 段路線（可再手動修改）`:'找不到可規劃的景點對',!!n);return}
- if(a==='planall'){if(edit)return;const btn=e.target;btn.disabled=true;btn.textContent='規劃全部中…';
-  const n=await planRoutesAllDays();setShowRoutes(true);renderView();setSync(n?`全部天數已規劃 ${n} 段路線`:'找不到可規劃的景點對',!!n);return}
  if(a==='edit'){draft=JSON.parse(JSON.stringify(DAYS[cur]));edit=true;return renderEdit()}
  if(a==='cancel'){edit=false;draft=null;return renderView()}
  if(a==='add'){draft.items.push({t:'',n:'',m:'',route:'',routeUrl:''});return renderEdit()}
