@@ -552,7 +552,7 @@ function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.cr
  b.onclick=()=>{edit=false;draft=null;show(i)};tabs.appendChild(b)})}
 const METRO_MAPS=[
  {id:'sapporo',title:'札幌市營地下鐵',src:'images/metro/sapporo-subway.png',credit:'地圖來源：Hiro36／Wikimedia Commons（CC BY-SA）'},
- {id:'tokyo',title:'東京地鐵・都營',src:'images/metro/tokyo-metro.jpg',credit:'地圖來源：Hisagi（氷鷺）／Wikimedia Commons（CC BY-SA）'}
+ {id:'tokyo',title:'東京地鐵（行程範圍）',src:'images/metro/tokyo-metro.jpg',credit:'已裁切至新宿・原宿・秋葉原・淺草一帶｜原圖 Hisagi（氷鷺）／Wikimedia Commons（CC BY-SA）'}
 ];
 function metroStartIndex(day){const c=String(day&&day.c||'');const t=String(day&&day.title||'');
  if(/東京|成田|川越|移動|蒲田|羽田|迪士尼|淺草|秋葉|原宿|新宿/.test(c+t))return 1;
