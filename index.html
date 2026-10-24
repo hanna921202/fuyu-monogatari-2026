@@ -134,22 +134,29 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .srow{display:flex;gap:12px;overflow-x:auto;padding:2px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .srow::-webkit-scrollbar{display:none;width:0;height:0}
 .srow .sp{flex:0 0 min(68vw,220px);scroll-snap-align:start}
-#ootd{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:12px;align-items:start;max-width:720px}
-#ootd>.btn,#ootd>.banner,#ootd>.item,#ootd>.bar{grid-column:1/-1}
+#ootd{display:flex;flex-direction:column;gap:14px;max-width:760px}
+#ootd .ootd-heads{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:2;padding:4px 0 2px;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
+#ootd .ootd-heads span{font-size:12px;letter-spacing:.14em;color:var(--acc);text-align:center;padding:6px 8px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+#ootd .ootd-day{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+#ootd .ootd-day .odate{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;margin:2px 0 0}
+#ootd .ootd-day .odate b{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:400;color:var(--acc);letter-spacing:.04em}
+#ootd .ootd-day .odate small{font-size:11px;color:var(--mute);letter-spacing:.1em}
+#ootd .ootd-actions{display:flex;flex-wrap:wrap;gap:8px}
 #ootd .ootd-card{padding:0;margin:0;overflow:hidden;border-radius:12px;box-shadow:0 8px 22px -16px rgba(20,50,90,.32)}
+#ootd .ootd-card.him{border-color:rgba(120,150,180,.28)}
 #ootd .ootd-card .sp-rail img,#ootd .ootd-card .ph{aspect-ratio:3/4}
 #ootd .ootd-card .sp-dots{bottom:6px;gap:4px}
 #ootd .ootd-card .sp-dots i{width:5px;height:5px}
 #ootd .ootd-card .sb{padding:9px 11px 11px}
-#ootd .ootd-card .od{font-family:"Cormorant Garamond",serif;font-size:17px;line-height:1.2;color:var(--acc);letter-spacing:.04em}
-#ootd .ootd-card .od small{font-family:var(--jp);font-size:10px;font-weight:500;letter-spacing:.12em;color:var(--mute);margin-left:5px;vertical-align:middle}
 #ootd .ootd-card .om{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
 #ootd .ootd-card .om .badge{font-size:10px;padding:1px 7px;letter-spacing:.06em}
 #ootd .ootd-card .on{margin-top:5px;font-size:12px;line-height:1.4;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #ootd .ootd-card .tbd{margin:4px 0 0;padding:0;font-size:11px}
-#ootd .ootd-dayimgs{display:flex;gap:4px;overflow-x:auto;margin-top:7px;padding-bottom:1px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+#ootd .ootd-dayimgs{display:flex;gap:4px;overflow-x:auto;margin-top:4px;padding-bottom:1px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
 #ootd .ootd-dayimgs::-webkit-scrollbar{display:none;width:0;height:0}
 #ootd .ootd-dayimgs img{flex:0 0 auto;width:36px;height:36px;object-fit:cover;border-radius:7px;background:var(--bg2);cursor:zoom-in;display:block}
+#ootd .ootd-edit .item{position:relative}
+#ootd .ootd-edit .who-tag{font-size:11px;letter-spacing:.12em;color:var(--acc);margin:0 0 8px}
 #yaku{display:flex;flex-direction:column;gap:22px}
 #yaku .yaku-block h3{margin:0 0 10px;font-size:15px;letter-spacing:.14em;color:var(--acc);font-weight:600}
 #yaku .phrase-list{display:grid;gap:8px}
@@ -332,13 +339,15 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .fl .nt{font-size:11px;margin-top:4px}
 .wish .card,.pk .card,#stay .card,#day.card,#cur .card,#acct .card,#jnl .card{padding:10px 12px;border-radius:10px}
 #stay .stay-card{padding:0;border-radius:10px}
-#ootd{gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
+#ootd{gap:10px}
+#ootd .ootd-heads{top:calc(env(safe-area-inset-top,0px) + 48px);gap:8px}
+#ootd .ootd-day{gap:8px}
+#ootd .ootd-day .odate b{font-size:16px}
 #ootd .ootd-card{border-radius:10px}
 #ootd .ootd-card .sb{padding:8px 9px 9px}
-#ootd .ootd-card .od{font-size:15px}
 #ootd .ootd-card .on{font-size:11px;-webkit-line-clamp:2}
-#ootd .ootd-dayimgs{gap:3px;margin-top:6px}
-#ootd .ootd-dayimgs img{width:30px;height:30px;border-radius:6px}
+#ootd .ootd-dayimgs{gap:3px}
+#ootd .ootd-dayimgs img{width:28px;height:28px;border-radius:6px}
 .tabs{gap:6px;padding:2px 0 8px}
 .tab{border-radius:10px;padding:5px 10px;font-size:11px}
 .tab b{font-size:16px}
@@ -1287,14 +1296,65 @@ function ootdDayStrip(date){
  const imgs=dayImgsForDate(date);if(!imgs.length)return'';
  return`<div class="ootd-dayimgs">${imgs.map(id=>`<img class="zoom" src="${blobSrc(id)}" alt="" loading="lazy">`).join('')}</div>`;
 }
+const OOTD_DATES=['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'];
+const ootdWho=r=>(r&&r.who==='him'?'him':'me');
+function ootdBlank(d,who){return{date:d||'',who:who==='him'?'him':'me',place:'',temp:'',note:'',imgs:[]}}
+function normalizeOotdList(L){
+ const map={};
+ (L||[]).forEach(r=>{if(!r)return;const d=String(r.date||'').trim();if(!d)return;map[d+':'+ootdWho(r)]={...r,date:d,who:ootdWho(r),imgs:asImgs(r.imgs)}});
+ const dates=[...OOTD_DATES];
+ Object.keys(map).forEach(k=>{const d=k.split(':')[0];if(d&&!dates.includes(d))dates.push(d)});
+ dates.sort();
+ const out=[];
+ dates.forEach(d=>{out.push(map[d+':me']||ootdBlank(d,'me'));out.push(map[d+':him']||ootdBlank(d,'him'))});
+ return out;
+}
+function ootdCardHTML(r){
+ const him=ootdWho(r)==='him';
+ const tags=!him?[r.temp,r.place].filter(Boolean).map(t=>`<span class="badge">${esc(t)}</span>`).join(''):'';
+ return`<div class="card ootd-card${him?' him':''}">${mediaRail(asImgs(r.imgs),'')}<div class="sb">${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:`<div class="tbd">${him?'還沒放穿搭':'尚未寫穿搭'}</div>`}</div></div>`;
+}
 const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:true,
  groups:[['imgs','新增穿搭照（可多張，不會覆蓋）']],
- def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,place:'',temp:'',note:'',imgs:[]})),
- blank:()=>({date:'',place:'',temp:'',note:'',imgs:[]}),
+ def:()=>normalizeOotdList(OOTD_DATES.flatMap(d=>[ootdBlank(d,'me'),ootdBlank(d,'him')])),
+ blank:()=>ootdBlank('','me'),
  fields:[['date','日期','date','sm'],['place','地點／天氣','text',''],['temp','氣溫','text','sm'],['note','穿搭說明','ta']],
- clean:L=>[...L].map(r=>({...r,imgs:asImgs(r.imgs)})).sort((a,b)=>String(a.date).localeCompare(String(b.date))),
- view:r=>{const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';const tags=[r.temp,r.place].filter(Boolean).map(t=>`<span class="badge">${esc(t)}</span>`).join('');
-  return `<div class="card ootd-card">${mediaRail(asImgs(r.imgs),'')}<div class="sb"><div class="od">${esc(String(r.date).slice(5).replace('-','/'))}${w?`<small>${w}</small>`:''}</div>${ootdDayStrip(r.date)}${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:'<div class="tbd">尚未寫穿搭</div>'}</div></div>`}});
+ clean:L=>normalizeOotdList(L).map(r=>({date:r.date,who:ootdWho(r),place:ootdWho(r)==='him'?'':String(r.place||''),temp:ootdWho(r)==='him'?'':String(r.temp||''),note:String(r.note||''),imgs:asImgs(r.imgs)})),
+ view:r=>ootdCardHTML(r)});
+(()=>{
+ const box=document.getElementById('ootd');if(!box)return;
+ const set0=OOTD.set;
+ OOTD.set=l=>{set0(normalizeOotdList(l));if(!OOTD.d)OOTD.render()};
+ OOTD._editWho='me';
+ OOTD.render=function(){
+  if(OOTD.d){
+   const who=OOTD._editWho==='him'?'him':'me';
+   const label=who==='him'?'男朋友':'我的';
+   const rows=OOTD.d.map((r,i)=>({r,i})).filter(x=>ootdWho(x.r)===who);
+   box.innerHTML=`<div class="banner">編輯${label}穿搭</div><div class="ootd-edit">${rows.map(({r,i})=>{
+    const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';
+    const head=`<div class="who-tag">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''} · ${label}</div><input type="hidden" data-f="date" value="${esc(r.date)}"><input type="hidden" data-f="who" value="${who}">`;
+    if(who==='him'){
+     return`<div class="item" data-i="${i}">${head}<label>備註<textarea data-f="note" placeholder="今天的穿搭…">${esc(r.note||'')}</textarea></label>${editImgsUI(asImgs(r.imgs),'imgs','新增穿搭照（可多張）')}</div>`;
+    }
+    return`<div class="item" data-i="${i}">${head}<div class="row"><label>地點／天氣<input data-f="place" value="${esc(r.place||'')}"></label><label class="sm">氣溫<input data-f="temp" value="${esc(r.temp||'')}"></label></div><label>穿搭說明<textarea data-f="note" placeholder="今天的穿搭…">${esc(r.note||'')}</textarea></label>${editImgsUI(asImgs(r.imgs),'imgs','新增穿搭照（可多張）')}</div>`;
+   }).join('')}</div><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span class="lmsg" style="font-size:13px;color:var(--mute)"></span></div>`;
+   return;
+  }
+  const L=normalizeOotdList(OOTD.L);OOTD.L=L;
+  const by={};L.forEach(r=>{const d=r.date;by[d]=by[d]||{};by[d][ootdWho(r)]=r});
+  const dates=Object.keys(by).sort();
+  box.innerHTML=`<div class="ootd-heads"><span>我的</span><span>男朋友</span></div>${dates.map(d=>{
+   const w='日一二三四五六'[new Date(d+'T00:00:00').getDay()];
+   const me=by[d].me||ootdBlank(d,'me'),him=by[d].him||ootdBlank(d,'him');
+   return`<div class="ootd-day"><div class="odate"><b>${esc(String(d).slice(5).replace('-','/'))}</b><small>${w}</small>${ootdDayStrip(d)}</div>${ootdCardHTML(me)}${ootdCardHTML(him)}</div>`;
+  }).join('')}${canEdit?`<div class="ootd-actions"><button class="btn" type="button" data-a="editme">✎ 編輯我的穿搭</button><button class="btn" type="button" data-a="edithim">✎ 編輯男朋友的穿搭</button></div>`:''}`;
+ };
+ box.addEventListener('click',e=>{
+  const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a;
+  if(a==='editme'||a==='edithim'){OOTD._editWho=a==='edithim'?'him':'me';OOTD.d=normalizeOotdList(cl(OOTD.L));OOTD.render();try{playClickSfx('kira')}catch(err){}e.stopPropagation()}
+ });
+})();
 const JNL=mkList({box:'jnl',doc:'journal',title:'旅途手記',noun:'一天',big:true,
  groups:[['stubs','票根／紀念章照片（可多選）'],['imgs','今日相片（可多選）']],
  def:()=>['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'].map(d=>({date:d,weather:'',temp:'',hl:'',hlnote:'',surprise:'',mood:'',stubs:[],imgs:[]})),
