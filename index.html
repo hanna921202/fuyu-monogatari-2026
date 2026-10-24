@@ -1304,6 +1304,17 @@ function ootdDayStrip(date){
 const OOTD_DATES=['2026-11-26','2026-11-27','2026-11-28','2026-11-29','2026-11-30','2026-12-01','2026-12-02','2026-12-03','2026-12-04'];
 const ootdWho=r=>(r&&r.who==='him'?'him':'me');
 function ootdBlank(d,who){return{date:d||'',who:who==='him'?'him':'me',place:'',temp:'',note:'',imgs:[]}}
+function syncOotdPlaceFromMe(L){
+ const out=(L||[]).map(r=>({...r,imgs:asImgs(r.imgs),who:ootdWho(r)}));
+ const meBy={};out.forEach(r=>{if(ootdWho(r)==='me')meBy[r.date]=r});
+ return out.map(r=>{
+  if(ootdWho(r)!=='him')return r;
+  const me=meBy[r.date];if(!me)return r;
+  const place=String(r.place||'').trim()?r.place:(me.place||'');
+  const temp=String(r.temp||'').trim()?r.temp:(me.temp||'');
+  return{...r,place,temp};
+ });
+}
 function normalizeOotdList(L){
  const map={};
  (L||[]).forEach(r=>{if(!r)return;const d=String(r.date||'').trim();if(!d)return;map[d+':'+ootdWho(r)]={...r,date:d,who:ootdWho(r),imgs:asImgs(r.imgs)}});
@@ -1312,11 +1323,11 @@ function normalizeOotdList(L){
  dates.sort();
  const out=[];
  dates.forEach(d=>{out.push(map[d+':me']||ootdBlank(d,'me'));out.push(map[d+':him']||ootdBlank(d,'him'))});
- return out;
+ return syncOotdPlaceFromMe(out);
 }
 function ootdCardHTML(r){
  const him=ootdWho(r)==='him';
- const tags=!him?[r.temp,r.place].filter(Boolean).map(t=>`<span class="badge">${esc(t)}</span>`).join(''):'';
+ const tags=[r.temp,r.place].filter(Boolean).map(t=>`<span class="badge">${esc(t)}</span>`).join('');
  return`<div class="card ootd-card${him?' him':''}">${mediaRail(asImgs(r.imgs),'')}<div class="sb">${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:`<div class="tbd">${him?'還沒放穿搭':'尚未寫穿搭'}</div>`}</div></div>`;
 }
 const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:true,
@@ -1324,7 +1335,7 @@ const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:
  def:()=>normalizeOotdList(OOTD_DATES.flatMap(d=>[ootdBlank(d,'me'),ootdBlank(d,'him')])),
  blank:()=>ootdBlank('','me'),
  fields:[['date','日期','date','sm'],['place','地點／天氣','text',''],['temp','氣溫','text','sm'],['note','穿搭說明','ta']],
- clean:L=>normalizeOotdList(L).map(r=>({date:r.date,who:ootdWho(r),place:ootdWho(r)==='him'?'':String(r.place||''),temp:ootdWho(r)==='him'?'':String(r.temp||''),note:String(r.note||''),imgs:asImgs(r.imgs)})),
+ clean:L=>normalizeOotdList(L).map(r=>({date:r.date,who:ootdWho(r),place:String(r.place||''),temp:String(r.temp||''),note:String(r.note||''),imgs:asImgs(r.imgs)})),
  view:r=>ootdCardHTML(r)});
 (()=>{
  const box=document.getElementById('ootd');if(!box)return;
@@ -1339,10 +1350,7 @@ const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:
    box.innerHTML=`<div class="banner">編輯${label}穿搭</div><div class="ootd-edit">${rows.map(({r,i})=>{
     const w=r.date?'日一二三四五六'[new Date(r.date+'T00:00:00').getDay()]:'';
     const head=`<div class="who-tag">${esc(String(r.date).slice(5).replace('-','/'))}${w?'（'+w+'）':''} · ${label}</div><input type="hidden" data-f="date" value="${esc(r.date)}"><input type="hidden" data-f="who" value="${who}">`;
-    if(who==='him'){
-     return`<div class="item" data-i="${i}">${head}<label>備註<textarea data-f="note" placeholder="今天的穿搭…">${esc(r.note||'')}</textarea></label>${editImgsUI(asImgs(r.imgs),'imgs','新增穿搭照（可多張）')}</div>`;
-    }
-    return`<div class="item" data-i="${i}">${head}<div class="row"><label>地點／天氣<input data-f="place" value="${esc(r.place||'')}"></label><label class="sm">氣溫<input data-f="temp" value="${esc(r.temp||'')}"></label></div><label>穿搭說明<textarea data-f="note" placeholder="今天的穿搭…">${esc(r.note||'')}</textarea></label>${editImgsUI(asImgs(r.imgs),'imgs','新增穿搭照（可多張）')}</div>`;
+    return`<div class="item" data-i="${i}">${head}<div class="row"><label>地點／天氣<input data-f="place" value="${esc(r.place||'')}"></label><label class="sm">氣溫<input data-f="temp" value="${esc(r.temp||'')}"></label></div><label>${who==='him'?'備註':'穿搭說明'}<textarea data-f="note" placeholder="今天的穿搭…">${esc(r.note||'')}</textarea></label>${editImgsUI(asImgs(r.imgs),'imgs','新增穿搭照（可多張）')}</div>`;
    }).join('')}</div><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span class="lmsg" style="font-size:13px;color:var(--mute)"></span></div>`;
    return;
   }
