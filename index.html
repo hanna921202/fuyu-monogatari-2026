@@ -1345,7 +1345,7 @@ const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:
   const L=normalizeOotdList(OOTD.L);OOTD.L=L;
   const by={};L.forEach(r=>{const d=r.date;by[d]=by[d]||{};by[d][ootdWho(r)]=r});
   const dates=Object.keys(by).sort();
-  box.innerHTML=`<div class="ootd-heads"><span>我的</span><span>男朋友</span></div>${dates.map(d=>{
+  box.innerHTML=`${dates.map(d=>{
    const w='日一二三四五六'[new Date(d+'T00:00:00').getDay()];
    const me=by[d].me||ootdBlank(d,'me'),him=by[d].him||ootdBlank(d,'him');
    return`<div class="ootd-day"><div class="odate"><b>${esc(String(d).slice(5).replace('-','/'))}</b><small>${w}</small>${ootdDayStrip(d)}</div>${ootdCardHTML(me)}${ootdCardHTML(him)}</div>`;
