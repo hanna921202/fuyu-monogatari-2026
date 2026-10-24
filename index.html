@@ -1241,6 +1241,7 @@ function mkList(c){
  function render(){
   if(!S.d){box.innerHTML=S.L.map(c.view).join('')+(canEdit?`<button class="btn" data-a="edit">✎ 編輯${c.title}</button>`:'');return}
   box.innerHTML=`<div class="banner">後台編輯模式 · ${c.title}</div>${S.d.map((r,i)=>`<div class="item" data-i="${i}"><div class="row">${c.fields.filter(f=>f[2]!=='ta').map(([k,l,t,w,ph])=>`<label class="${w}">${l}<input type="${t}" data-f="${k}" value="${esc(r[k])}" placeholder="${esc(ph||'')}"></label>`).join('')}</div>${c.fields.filter(f=>f[2]==='ta').map(([k,l,_,__,ph])=>`<label>${l}<textarea data-f="${k}" placeholder="${esc(ph||'')}">${esc(r[k])}</textarea></label>`).join('')}${(c.groups||[['imgs','新增照片（可多張，不會覆蓋）']]).map(([gk,gl])=>`${editImgsUI(asImgs(r[gk]),gk,gl)}`).join('')}${c.extraEd?c.extraEd(r):''}<div class="ctl"><button class="btn s" data-a="up">↑</button><button class="btn s" data-a="down">↓</button><button class="btn s del" data-a="del">刪除</button></div></div>`).join('')}<button class="btn" data-a="add">＋ 新增${c.noun}</button><div class="bar"><button class="btn pri" data-a="save">儲存</button><button class="btn" data-a="cancel">取消</button><span class="lmsg" style="font-size:13px;color:var(--mute)"></span></div>`}
+ S.render=render;
  box.addEventListener('input',e=>{const t=e.target,it=t.closest('.item');if(!S.d||!it)return;const r=S.d[+it.dataset.i];if(t.dataset.f)r[t.dataset.f]=t.value;else if(c.extraIn)c.extraIn(t,r)});
  box.addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,it=t.closest('.item'),i=it?+it.dataset.i:-1,D=S.d;
   if(a==='edit')S.d=normList(cl(S.L));else if(a==='cancel')S.d=null;
@@ -1254,11 +1255,11 @@ function mkList(c){
    if(c.doc==='stays'){const before=(S.L||[]).filter(r=>String(r.name||'').trim()).length,after=(out||[]).filter(r=>String(r.name||'').trim()).length;if(before>0&&after===0){m.textContent='偵測到住宿名稱被清空，已取消儲存以免覆蓋雲端資料';return}}
    try{await db.collection('trip').doc(c.doc).set({list:out});S.L=cl(out);S.d=null}catch(err){m.textContent='儲存失敗，請確認有編輯權限';return}}
   else if(c.extraClk)c.extraClk(a,t,D[i]);
-  render()});
+  S.render()});
  box.addEventListener('change',async e=>{const t=e.target;if(!t.dataset.up||!S.d||!t.files.length)return;const i=+t.closest('.item').dataset.i,key=t.dataset.up,m=box.querySelector('.lmsg'),fs=[...t.files];let err=false;
   try{const as=await claude.use('assets');if(!as)throw 0;for(let k=0;k<fs.length;k++){if(!S.d||!S.d[i])throw 0;if(m)m.textContent='圖片上傳中…（'+(k+1)+'/'+fs.length+'）';const u=await as.upload(await shrink(fs[k]));const r=S.d[i];r[key]=asImgs(r[key]).concat([u.id])}}catch(x){err=true}
-  t.value='';render();if(err){const msg=box.querySelector('.lmsg');if(msg)msg.textContent='圖片上傳失敗，請確認有編輯權限'}});
- S.set=l=>{const next=normList(cl(l));S.L=next;if(!S.d)render()};S.render=render;return S}
+  t.value='';S.render();if(err){const msg=box.querySelector('.lmsg');if(msg)msg.textContent='圖片上傳失敗，請確認有編輯權限'}});
+ S.set=l=>{const next=normList(cl(l));S.L=next;if(!S.d)S.render()};return S}
 const AM0=()=>['吹風機','毛巾','浴巾','牙刷牙膏','洗髮沐浴乳','拖鞋','睡衣','電熱水壺','冰箱','洗衣機','Wi-Fi','暖氣'].map(n=>({n,has:false}));
 const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  def:()=>[{name:'',area:'北海道',cin:'2026-11-26',cout:'2026-11-29',tin:'',tout:'',addr:'',tel:'',bk:'',note:'',imgs:[],am:AM0()},{name:'',area:'東京',cin:'2026-11-29',cout:'2026-12-04',tin:'',tout:'',addr:'',tel:'',bk:'',note:'',imgs:[],am:AM0()}],
