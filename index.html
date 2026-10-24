@@ -142,7 +142,11 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd .ootd-day .odate b{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:400;color:var(--acc);letter-spacing:.04em;line-height:1;margin:0}
 #ootd .ootd-day .odate small{font-size:11px;color:var(--mute);letter-spacing:.1em;line-height:1}
 #ootd .ootd-day .odate .ootd-dayimgs{margin:0 0 0 auto;padding:0;flex:1;min-width:0;justify-content:flex-end}
-#ootd .ootd-actions{display:flex;flex-wrap:wrap;gap:8px}
+#ootd .ootd-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:4px}
+#ootd .ootd-actions .ootd-link{font:inherit;font-size:13px;letter-spacing:.08em;color:var(--acc);background:none;border:0;padding:0;margin:0;cursor:pointer;text-decoration:none;opacity:.92}
+#ootd .ootd-actions .ootd-link:hover{opacity:1;text-decoration:underline;text-underline-offset:3px}
+#ootd .ootd-actions .ootd-link.me{justify-self:start}
+#ootd .ootd-actions .ootd-link.him{margin-left:auto;text-align:right}
 #ootd .ootd-card{padding:0;margin:0;overflow:hidden;border-radius:12px;box-shadow:0 8px 22px -16px rgba(20,50,90,.32)}
 #ootd .ootd-card.him{border-color:rgba(120,150,180,.28)}
 #ootd .ootd-card .sp-rail img,#ootd .ootd-card .ph{aspect-ratio:3/4}
@@ -1349,7 +1353,7 @@ const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:
    const w='日一二三四五六'[new Date(d+'T00:00:00').getDay()];
    const me=by[d].me||ootdBlank(d,'me'),him=by[d].him||ootdBlank(d,'him');
    return`<div class="ootd-day"><div class="odate"><b>${esc(String(d).slice(5).replace('-','/'))}</b><small>${w}</small>${ootdDayStrip(d)}</div>${ootdCardHTML(me)}${ootdCardHTML(him)}</div>`;
-  }).join('')}${canEdit?`<div class="ootd-actions"><button class="btn" type="button" data-a="editme">✎ 編輯我的穿搭</button><button class="btn" type="button" data-a="edithim">✎ 編輯男朋友的穿搭</button></div>`:''}`;
+  }).join('')}${canEdit?`<div class="ootd-actions"><button class="ootd-link me" type="button" data-a="editme">編輯我的穿搭</button><button class="ootd-link him" type="button" data-a="edithim">編輯男朋友的穿搭</button></div>`:''}`;
  };
  box.addEventListener('click',e=>{
   const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a;
