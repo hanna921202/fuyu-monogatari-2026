@@ -737,18 +737,35 @@ function planRoutesForDay(day){if(!day||!Array.isArray(day.items))return 0;let n
 function routeHTML(o){if(!showRoutes||!o||(!o.route&&!o.routeUrl))return'';
  return`<li class="tr"><div class="route"><span class="rk">交通</span><span class="rt">${esc(o.route||'查看地圖路線')}</span>${o.routeUrl?`<a href="${esc(o.routeUrl)}" target="_blank" rel="noopener">地圖開啟</a>`:''}</div></li>`}
 function dayHasRoutes(day){return !!(day&&day.items&&day.items.some(o=>o&&(o.route||o.routeUrl)))}
+function stayYmd(s){const t=String(s||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(t))return t;const m=String(s||'').match(/(\d{1,2})\D+(\d{1,2})/);return m?`2026-${String(+m[1]).padStart(2,'0')}-${String(+m[2]).padStart(2,'0')}`:''}
+function stayDayYmd(day){return stayYmd(day&&day.d)}
+function stayShiftYmd(ymd,delta){if(!ymd)return'';const d=new Date(ymd+'T12:00:00');if(isNaN(+d))return'';d.setDate(d.getDate()+delta);return d.toISOString().slice(0,10)}
+function stayHotelForNight(ymd){
+ if(!ymd)return null;
+ try{return (typeof STAY!=='undefined'&&STAY.L||[]).find(r=>{const a=stayYmd(r&&r.cin),b=stayYmd(r&&r.cout);return a&&b&&a<=ymd&&ymd<b})||null}catch(e){return null}
+}
+function stayItemFromHotel(r,kind,dayYmd){
+ if(!r)return null;
+ const hotel=String(r.name||'').trim()||'住宿';
+ const img=(typeof asImgs==='function'?asImgs(r.imgs):[]).find(Boolean)||'';
+ const meta=[r.area,r.addr].filter(Boolean).join(' · ');
+ const out=kind==='go';
+ const badge=out?(stayYmd(r.cout)===dayYmd?'out':''):(stayYmd(r.cin)===dayYmd?'in':'');
+ return{
+  t:out?(badge==='out'?(r.tout||''):''):(badge==='in'?(r.tin||''):''),
+  n:out?`從 ${hotel} 出發`:`回 ${hotel}`,
+  m:meta||(badge==='out'?'今日退房後出發':badge==='in'?'今晚入住':(out?'今天從這間飯店出發':'今天回到這間飯店')),
+  img,_stay:1,_stayKind:badge||(out?'go':'back')
+ };
+}
 function dayItemsWithStay(day){
  const base=(day&&day.items)||[];
- const key=mdKey(day&&day.d);if(!key)return base.slice();
+ const ymd=stayDayYmd(day);if(!ymd)return base.slice();
+ const morn=stayHotelForNight(stayShiftYmd(ymd,-1));
+ const night=stayHotelForNight(ymd);
  const head=[],tail=[];
- try{(typeof STAY!=='undefined'&&STAY.L||[]).forEach(r=>{
-  if(!r)return;
-  const hotel=String(r.name||'').trim()||'住宿';
-  const img=(typeof asImgs==='function'?asImgs(r.imgs):[]).find(Boolean)||'';
-  const meta=[r.area,r.addr].filter(Boolean).join(' · ');
-  if(mdKey(r.cout)===key)head.push({t:r.tout||'',n:'退房・'+hotel,m:meta||'記得辦理退房手續',img,_stay:1,_stayKind:'out'});
-  if(mdKey(r.cin)===key)tail.push({t:r.tin||'',n:'入住・'+hotel,m:meta||'辦理入住手續',img,_stay:1,_stayKind:'in'});
- })}catch(e){}
+ const go=stayItemFromHotel(morn,'go',ymd);if(go)head.push(go);
+ const back=stayItemFromHotel(night,'back',ymd);if(back)tail.push(back);
  return head.concat(base,tail);
 }
 function renderView(){const x=DAYS[cur];
