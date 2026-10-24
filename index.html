@@ -1403,19 +1403,15 @@ if(yakuBox){
 }
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-yaku','日本語ほんやく'],['s-acct','記帳']];
 const CLICK_SFX=[
- {id:'yuki',name:'雪の粒',tip:'輕柔高音小點'},
- {id:'suzu',name:'鈴の音',tip:'清亮小鈴鐺'},
  {id:'pochi',name:'ぽちっ',tip:'軟軟一點擊'},
  {id:'kira',name:'きらきら',tip:'兩聲閃亮'},
- {id:'mizu',name:'水玉',tip:'水滴泡泡'},
  {id:'piyo',name:'ぴよ',tip:'小鳥啾一聲'},
  {id:'koron',name:'ころん',tip:'軟木琴撥弦'},
- {id:'chirin',name:'ちりん',tip:'細細鐘聲'},
- {id:'fuwa',name:'ふわっ',tip:'蓬鬆輕飄'},
- {id:'konkon',name:'こんこん',tip:'輕輕兩下敲'}
+ {id:'fuwa',name:'ふわっ',tip:'蓬鬆輕飄'}
 ];
-let clickSfxId='yuki',clickActx=null;
-try{clickSfxId=localStorage.getItem('fuyu-click-sfx')||'yuki'}catch(e){}
+let clickSfxId='pochi',clickActx=null;
+try{clickSfxId=localStorage.getItem('fuyu-click-sfx')||'pochi'}catch(e){}
+if(clickSfxId!=='off'&&!CLICK_SFX.some(x=>x.id===clickSfxId))clickSfxId='pochi';
 function clickAudio(){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;if(!clickActx)clickActx=new AC();if(clickActx.state==='suspended')clickActx.resume();return clickActx}
 function clickTone(ctx,dest,freq,t0,dur,type,vol,slide){
  const o=ctx.createOscillator(),g=ctx.createGain();o.type=type||'sine';
@@ -1425,16 +1421,11 @@ function clickTone(ctx,dest,freq,t0,dur,type,vol,slide){
 function playClickSfx(id){
  const key=id==null?clickSfxId:id;if(!key||key==='off')return;
  const ctx=clickAudio();if(!ctx)return;const t0=ctx.currentTime+0.01,master=ctx.createGain();master.gain.value=0.22;master.connect(ctx.destination);
- if(key==='yuki'){clickTone(ctx,master,1320,t0,0.12,'sine',0.9,880);clickTone(ctx,master,1980,t0+0.03,0.1,'triangle',0.35,1400)}
- else if(key==='suzu'){clickTone(ctx,master,1568,t0,0.22,'sine',0.7,1174);clickTone(ctx,master,2349,t0,0.18,'sine',0.35,1760);clickTone(ctx,master,3136,t0+0.02,0.14,'triangle',0.18,2200)}
- else if(key==='pochi'){clickTone(ctx,master,520,t0,0.08,'triangle',0.85,220);clickTone(ctx,master,780,t0+0.02,0.07,'sine',0.4,400)}
+ if(key==='pochi'){clickTone(ctx,master,520,t0,0.08,'triangle',0.85,220);clickTone(ctx,master,780,t0+0.02,0.07,'sine',0.4,400)}
  else if(key==='kira'){clickTone(ctx,master,1175,t0,0.1,'sine',0.7,1760);clickTone(ctx,master,1568,t0+0.09,0.12,'sine',0.65,2093)}
- else if(key==='mizu'){clickTone(ctx,master,880,t0,0.14,'sine',0.55,420);clickTone(ctx,master,1320,t0+0.05,0.16,'sine',0.4,660)}
  else if(key==='piyo'){clickTone(ctx,master,1480,t0,0.07,'square',0.28,1800);clickTone(ctx,master,1760,t0+0.06,0.09,'square',0.22,2100)}
  else if(key==='koron'){clickTone(ctx,master,659,t0,0.16,'triangle',0.75,523);clickTone(ctx,master,988,t0+0.04,0.14,'sine',0.35,784)}
- else if(key==='chirin'){clickTone(ctx,master,2093,t0,0.2,'sine',0.55,1568);clickTone(ctx,master,2637,t0+0.01,0.16,'triangle',0.25,2093)}
  else if(key==='fuwa'){clickTone(ctx,master,392,t0,0.22,'sine',0.5,620);clickTone(ctx,master,584,t0+0.03,0.2,'triangle',0.28,880)}
- else if(key==='konkon'){clickTone(ctx,master,280,t0,0.07,'triangle',0.7,140);clickTone(ctx,master,320,t0+0.1,0.08,'triangle',0.55,150)}
 }
 function renderSfxPicker(){
  const grid=document.getElementById('sfxgrid');if(!grid)return;
