@@ -190,24 +190,30 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .stay-home .more:hover{opacity:1}
 .stay-home .more .arr{font-size:12px;letter-spacing:0;transition:transform .18s ease}
 .stay-home .more:hover .arr{transform:translateX(3px)}
-#stay .stay-card{display:grid;grid-template-columns:minmax(110px,168px) minmax(0,1fr);align-items:stretch;margin:0 0 10px;padding:0;overflow:hidden;border-radius:12px}
-#stay .stay-card .sp-media,#stay .stay-card>.ph{height:100%;min-height:0}
+#stay .stay-card{display:grid;grid-template-columns:minmax(200px,42%) minmax(0,1fr);align-items:stretch;margin:0 0 14px;padding:0;overflow:hidden;border-radius:14px;box-shadow:0 8px 22px -18px rgba(20,50,90,.35)}
+#stay .stay-card .sp-media,#stay .stay-card>.ph{height:100%;min-height:0;background:linear-gradient(160deg,rgba(120,150,180,.12),rgba(120,150,180,.04))}
 #stay .stay-card .sp-rail{height:100%}
-#stay .stay-card .sp-rail img,#stay .stay-card>.ph{aspect-ratio:auto;height:100%;min-height:120px;max-height:168px;object-fit:cover}
-#stay .stay-card>.ph{font-size:26px}
-#stay .stay-card .sb{padding:10px 14px 12px;display:flex;flex-direction:column;gap:4px;justify-content:center}
-#stay .stay-card .dayhead{margin:0 0 2px;gap:6px}
-#stay .stay-card .dayhead h3{font-size:15px;letter-spacing:.08em;line-height:1.35}
-#stay .stay-card .badge{font-size:10px;padding:1px 8px}
-#stay .stay-card .meta{font-size:12px;color:var(--mute);line-height:1.45}
-#stay .stay-card .rowline{font-size:12.5px;line-height:1.45}
-#stay .stay-card .chips{margin-top:4px;gap:5px}
-#stay .stay-card .chips span{font-size:11px;padding:1px 8px}
-#stay .stay-card .note{white-space:pre-wrap;margin-top:4px;font-size:12.5px;line-height:1.5;color:var(--mute)}
-@media(max-width:560px){
-#stay .stay-card{grid-template-columns:1fr}
-#stay .stay-card .sp-rail img,#stay .stay-card>.ph{aspect-ratio:2/1;height:auto;min-height:0;max-height:132px}
-#stay .stay-card .sb{padding:9px 12px 11px}
+#stay .stay-card .sp-rail img,#stay .stay-card>.ph{aspect-ratio:auto;width:100%;height:100%;min-height:168px;max-height:240px;object-fit:contain;object-position:center;background:transparent}
+#stay .stay-card .sp-dots{bottom:6px}
+#stay .stay-card>.ph{font-size:28px;display:flex;align-items:center;justify-content:center;color:var(--acc);opacity:.7}
+#stay .stay-card .sb{padding:12px 16px 14px;display:flex;flex-direction:column;gap:5px;justify-content:center;min-width:0}
+#stay .stay-card .dayhead{margin:0;gap:6px 8px;align-items:center}
+#stay .stay-card .dayhead h3{font-size:16px;letter-spacing:.1em;line-height:1.35;font-weight:600}
+#stay .stay-card .badge{font-size:10px;padding:2px 9px;letter-spacing:.08em}
+#stay .stay-card .meta{font-size:12px;color:var(--mute);line-height:1.45;letter-spacing:.02em}
+#stay .stay-card .rowline{font-size:12px;line-height:1.5;color:var(--ink)}
+#stay .stay-card .am-label{margin-top:4px;font-size:10px;letter-spacing:.14em;color:var(--mute)}
+#stay .stay-card .chips{margin-top:2px;gap:3px}
+#stay .stay-card .chips span{font-size:9.5px;padding:0 6px;line-height:1.7;letter-spacing:.02em;border-radius:99px;opacity:.72}
+#stay .stay-card .chips span.am.on{opacity:1;font-size:9.5px}
+#stay .stay-card .note{white-space:pre-wrap;margin-top:4px;padding-top:6px;border-top:1px dashed var(--line);font-size:12px;line-height:1.55;color:var(--mute)}
+@media(max-width:640px){
+#stay .stay-card{grid-template-columns:1fr;border-radius:12px;margin:0 0 12px}
+#stay .stay-card .sp-media,#stay .stay-card>.ph{min-height:0}
+#stay .stay-card .sp-rail img,#stay .stay-card>.ph{aspect-ratio:16/10;height:auto;min-height:0;max-height:220px;object-fit:contain}
+#stay .stay-card .sb{padding:10px 12px 12px;gap:4px}
+#stay .stay-card .dayhead h3{font-size:15px}
+#stay .stay-card .chips span,#stay .stay-card .chips span.am.on{font-size:9px;padding:0 5px;line-height:1.65}
 }
 .shcat{margin:0 0 22px}.shcat .chd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
 .shcat .chd h4{margin:0;color:var(--acc);letter-spacing:.15em;font-size:16px}
@@ -1171,7 +1177,7 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  extraIn:(t,r)=>{const m=t.closest('.amr');if(!m)return;const a=r.am[+m.dataset.m];if(t.dataset.mf==='has')a.has=t.checked;else if(t.dataset.mf==='n')a.n=t.value},
  extraClk:(a,t,r)=>{if(a==='addam')r.am.push({n:'',has:false});else if(a==='delam')r.am.splice(+t.closest('.amr').dataset.m,1)},
  view:r=>{const n=r.cin&&r.cout?Math.round((new Date(r.cout)-new Date(r.cin))/864e5):0,dd=s=>s?s.slice(5).replace('-','/'):'';
-  return `<div class="card sp stay-card">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="dayhead"><h3>${esc(r.name)||'（尚未填寫住宿名稱）'}</h3>${r.area?`<span class="badge">${esc(r.area)}</span>`:''}</div><div class="meta">${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}${r.tin?'　入住 '+esc(r.tin):''}${r.tout?'　退房 '+esc(r.tout):''}</div>${r.addr?`<div class="rowline">📍 ${esc(r.addr)}</div>`:''}${r.tel?`<div class="rowline">☎ ${esc(r.tel)}</div>`:''}${r.bk?`<div class="rowline">訂單編號：${esc(r.bk)}</div>`:''}${(r.am||[]).length?`<div class="chips">${r.am.map(a=>`<span class="${a.has?'am on':'am'}">${a.has?'✓':'✕'} ${esc(a.n)}</span>`).join('')}</div>`:''}${r.note?`<div class="note">${esc(r.note)}</div>`:''}</div></div>`}});
+  return `<div class="card sp stay-card">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="dayhead"><h3>${esc(r.name)||'（尚未填寫住宿名稱）'}</h3>${r.area?`<span class="badge">${esc(r.area)}</span>`:''}</div><div class="meta">${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}${r.tin?'　入住 '+esc(r.tin):''}${r.tout?'　退房 '+esc(r.tout):''}</div>${r.addr?`<div class="rowline">📍 ${esc(r.addr)}</div>`:''}${r.tel?`<div class="rowline">☎ ${esc(r.tel)}</div>`:''}${r.bk?`<div class="rowline">訂單編號：${esc(r.bk)}</div>`:''}${(r.am||[]).length?`<div class="am-label">房內設備</div><div class="chips">${r.am.map(a=>`<span class="${a.has?'am on':'am'}">${a.has?'✓':'·'} ${esc(a.n)}</span>`).join('')}</div>`:''}${r.note?`<div class="note">${esc(r.note)}</div>`:''}</div></div>`}});
 (()=>{const full=STAY.render,box=document.getElementById('stay'),dd=s=>s?s.slice(5).replace('-','/'):'';
  STAY.render=function(){
   if(STAY.d)return full();
