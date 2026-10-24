@@ -628,7 +628,7 @@ const SNOW_ICO=`<svg class="ico-snow" viewBox="0 0 24 24" aria-hidden="true" foc
 function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.createElement('button');b.className='tab';b.role='tab';
  b.setAttribute('aria-selected',i===cur);
  b.innerHTML=`<span class="c">DAY ${i+1}</span><b>${esc(x.d)}</b><span class="c">${esc(x.c)}</span>`;
- b.onclick=()=>{try{if(typeof playClickSfx==='function')playClickSfx('koron')}catch(e){}edit=false;draft=null;show(i)};tabs.appendChild(b)})}
+ b.onclick=()=>{try{if(typeof playClickSfx==='function')playClickSfx('kira')}catch(e){}edit=false;draft=null;show(i)};tabs.appendChild(b)})}
 const METRO_MAPS=[
  {id:'sapporo',title:'札幌市營地下鐵',src:'images/metro/sapporo-subway.png',credit:'地圖來源：Hiro36／Wikimedia Commons（CC BY-SA）',
   links:[
@@ -796,9 +796,9 @@ draw()})();
 // ===== 航班 / 旅行の予定 =====
 const cl=o=>JSON.parse(JSON.stringify(o));
 const FL0=[
-{date:'11/26',w:'木',airline:'',no:'',from:'桃園 TPE',to:'新千歲 CTS',dep:'',arr:'',note:'前往北海道',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
-{date:'11/29',w:'日',airline:'',no:'',from:'新千歲 CTS',to:'羽田 HND',dep:'',arr:'',note:'北海道 → 東京',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
-{date:'12/04',w:'金',airline:'',no:'',from:'成田 NRT',to:'桃園 TPE',dep:'',arr:'',note:'返程',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''}];
+{date:'11/26',w:'木',airline:'泰國亞航',no:'FD242',from:'桃園 TPE',to:'新千歲 CTS',dep:'07:15',arr:'12:00',note:'台灣桃園國際機場第一航廈\n→ 北海道新千歲機場國際線航廈I',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
+{date:'11/29',w:'日',airline:'全日空航空',no:'NH084',from:'新千歲 CTS',to:'羽田 HND',dep:'21:25',arr:'23:10',note:'北海道新千歲機場國內線航廈D\n→ 東京羽田機場第二航廈',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
+{date:'12/04',w:'金',airline:'捷星日本',no:'GK011',from:'成田 NRT',to:'桃園 TPE',dep:'22:05',arr:'01:30',note:'東京成田國際機場第三航廈\n→ 台灣桃園國際機場第一航廈',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''}];
 const normFl=f=>({date:'',w:'',airline:'',no:'',from:'',to:'',dep:'',arr:'',note:'',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:'',...(f||{})});
 const mealLabel=m=>({yes:'有提供',no:'不提供',unk:'未確認'}[m]||'');
 const WJP={'日':'日','一':'月','二':'火','三':'水','四':'木','五':'金','六':'土','月':'月','火':'火','水':'水','木':'木','金':'金','土':'土'};
@@ -1403,8 +1403,7 @@ if(yakuBox){
 }
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-yaku','日本語ほんやく'],['s-acct','記帳']];
 const CLICK_SFX=[
- {id:'koron',name:'ころん',tip:'點擊分頁'},
- {id:'kira',name:'きらきら',tip:'進入編輯'},
+ {id:'kira',name:'きらきら',tip:'點擊分頁／進入編輯'},
  {id:'piyo',name:'ぴよ',tip:'儲存／取消'},
  {id:'fuwa',name:'ふわっ',tip:'查看動作'}
 ];
@@ -1448,7 +1447,7 @@ function openSec(id,jump,quiet){
  try{sessionStorage.setItem('fuyu-sec',id)}catch(e){}
  try{const h=id==='home'?'':('#'+id);if(location.hash!==h)history.replaceState(null,'',h||(location.pathname+location.search))}catch(e){}
  try{if(typeof STAY!=='undefined'&&STAY.render)STAY.render()}catch(e){}
- if(jump){if(changed&&!quiet)playClickSfx('koron');try{document.querySelector('main').scrollIntoView()}catch(e){}}
+ if(jump){if(changed&&!quiet)playClickSfx('kira');try{document.querySelector('main').scrollIntoView()}catch(e){}}
 }
 function tgl(o){dr.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
 mb.onclick=()=>tgl(!dr.classList.contains('open'));
