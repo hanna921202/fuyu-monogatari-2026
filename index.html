@@ -74,6 +74,8 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .tl li::before{content:"";position:absolute;left:-29px;top:2px;width:14px;height:14px;background-color:var(--acc);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M12 2.5v19M4.5 7l15 10M4.5 17l15-10'/%3E%3Cpath d='M12 5.2l1.4-1.8M12 5.2 10.6 3.4M12 18.8l1.4 1.8M12 18.8l-1.4 1.8M6.4 8.1l-1.8-.4M6.4 8.1l.2-1.9M17.6 15.9l1.8.4M17.6 15.9l-.2 1.9M6.4 15.9l-1.8.4M6.4 15.9l.2 1.9M17.6 8.1l1.8-.4M17.6 8.1l-.2-1.9'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M12 2.5v19M4.5 7l15 10M4.5 17l15-10'/%3E%3Cpath d='M12 5.2l1.4-1.8M12 5.2 10.6 3.4M12 18.8l1.4 1.8M12 18.8l-1.4 1.8M6.4 8.1l-1.8-.4M6.4 8.1l.2-1.9M17.6 15.9l1.8.4M17.6 15.9l-.2 1.9M6.4 15.9l-1.8.4M6.4 15.9l.2 1.9M17.6 8.1l1.8-.4M17.6 8.1l-.2-1.9'/%3E%3C/svg%3E") center/contain no-repeat}
 .tl .t{font-family:"Cormorant Garamond",serif;color:var(--acc);font-size:15px;letter-spacing:.1em}
 .tl .n{font-weight:600}.tl .m{color:var(--mute);font-size:14px}
+.tl li.stay-act .n .badge{font-size:10px;padding:1px 8px;vertical-align:middle;margin-left:4px}
+.tl li.stay-act .n{color:var(--acc)}
 .tbd{color:var(--mute);font-style:italic;padding:10px 0}
 .wish{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .wish h4{margin:0 0 8px;color:var(--acc);letter-spacing:.15em}
@@ -628,7 +630,7 @@ const SNOW_ICO=`<svg class="ico-snow" viewBox="0 0 24 24" aria-hidden="true" foc
 function renderTabs(){tabs.innerHTML='';DAYS.forEach((x,i)=>{const b=document.createElement('button');b.className='tab';b.role='tab';
  b.setAttribute('aria-selected',i===cur);
  b.innerHTML=`<span class="c">DAY ${i+1}</span><b>${esc(x.d)}</b><span class="c">${esc(x.c)}</span>`;
- b.onclick=()=>{try{if(typeof playClickSfx==='function')playClickSfx('kira')}catch(e){}edit=false;draft=null;show(i)};tabs.appendChild(b)})}
+ b.onclick=()=>{try{if(typeof playClickSfx==='function')playClickSfx('koron')}catch(e){}edit=false;draft=null;show(i)};tabs.appendChild(b)})}
 const METRO_MAPS=[
  {id:'sapporo',title:'札幌市營地下鐵',src:'images/metro/sapporo-subway.png',credit:'地圖來源：Hiro36／Wikimedia Commons（CC BY-SA）',
   links:[
@@ -735,8 +737,23 @@ function planRoutesForDay(day){if(!day||!Array.isArray(day.items))return 0;let n
 function routeHTML(o){if(!showRoutes||!o||(!o.route&&!o.routeUrl))return'';
  return`<li class="tr"><div class="route"><span class="rk">交通</span><span class="rt">${esc(o.route||'查看地圖路線')}</span>${o.routeUrl?`<a href="${esc(o.routeUrl)}" target="_blank" rel="noopener">地圖開啟</a>`:''}</div></li>`}
 function dayHasRoutes(day){return !!(day&&day.items&&day.items.some(o=>o&&(o.route||o.routeUrl)))}
+function dayItemsWithStay(day){
+ const base=(day&&day.items)||[];
+ const key=mdKey(day&&day.d);if(!key)return base.slice();
+ const head=[],tail=[];
+ try{(typeof STAY!=='undefined'&&STAY.L||[]).forEach(r=>{
+  if(!r)return;
+  const hotel=String(r.name||'').trim()||'住宿';
+  const img=(typeof asImgs==='function'?asImgs(r.imgs):[]).find(Boolean)||'';
+  const meta=[r.area,r.addr].filter(Boolean).join(' · ');
+  if(mdKey(r.cout)===key)head.push({t:r.tout||'',n:'退房・'+hotel,m:meta||'記得辦理退房手續',img,_stay:1,_stayKind:'out'});
+  if(mdKey(r.cin)===key)tail.push({t:r.tin||'',n:'入住・'+hotel,m:meta||'辦理入住手續',img,_stay:1,_stayKind:'in'});
+ })}catch(e){}
+ return head.concat(base,tail);
+}
 function renderView(){const x=DAYS[cur];
- const list=x.items.length?`<ul class="tl">${x.items.map((o,i)=>`${i>0?routeHTML(o):''}<li class="${blobSrc(o.img)?'hasimg':''}">${blobSrc(o.img)?`<img class="ti" src="${blobSrc(o.img)}" alt="${esc(o.n)}" loading="lazy">`:''}<div class="tx">${o.t?`<div class="t">${esc(o.t)}</div>`:''}<div class="n">${esc(o.n)}</div>${o.m?`<div class="m">${esc(o.m)}</div>`:''}</div></li>`).join('')}</ul>`:'<div class="tbd">這天還沒有行程…</div>';
+ const items=dayItemsWithStay(x);
+ const list=items.length?`<ul class="tl">${items.map((o,i)=>`${i>0&&!o._stay?routeHTML(o):''}<li class="${blobSrc(o.img)?'hasimg':''}${o._stay?' stay-act':''}">${blobSrc(o.img)?`<img class="ti" src="${blobSrc(o.img)}" alt="${esc(o.n)}" loading="lazy">`:''}<div class="tx">${o.t?`<div class="t">${esc(o.t)}</div>`:''}<div class="n">${esc(o.n)}${o._stayKind==='in'?' <span class="badge">入住</span>':o._stayKind==='out'?' <span class="badge">退房</span>':''}</div>${o.m?`<div class="m">${esc(o.m)}</div>`:''}</div></li>`).join('')}</ul>`:'<div class="tbd">這天還沒有行程…</div>';
  const canPlan=canEdit&&x.items&&x.items.length>1;
  const hasR=dayHasRoutes(x);
  const hideBtn=hasR?`<button class="btn" data-a="toggleroutes">${showRoutes?'隱藏路線':'顯示路線'}</button>`:'';
@@ -796,9 +813,9 @@ draw()})();
 // ===== 航班 / 旅行の予定 =====
 const cl=o=>JSON.parse(JSON.stringify(o));
 const FL0=[
-{date:'11/26',w:'木',airline:'泰國亞航',no:'FD242',from:'桃園 TPE',to:'新千歲 CTS',dep:'07:15',arr:'12:00',note:'台灣桃園國際機場第一航廈\n→ 北海道新千歲機場國際線航廈I',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
-{date:'11/29',w:'日',airline:'全日空航空',no:'NH084',from:'新千歲 CTS',to:'羽田 HND',dep:'21:25',arr:'23:10',note:'北海道新千歲機場國內線航廈D\n→ 東京羽田機場第二航廈',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
-{date:'12/04',w:'金',airline:'捷星日本',no:'GK011',from:'成田 NRT',to:'桃園 TPE',dep:'22:05',arr:'01:30',note:'東京成田國際機場第三航廈\n→ 台灣桃園國際機場第一航廈',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''}];
+{date:'11/26',w:'木',airline:'',no:'',from:'桃園 TPE',to:'新千歲 CTS',dep:'',arr:'',note:'前往北海道',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
+{date:'11/29',w:'日',airline:'',no:'',from:'新千歲 CTS',to:'羽田 HND',dep:'',arr:'',note:'北海道 → 東京',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
+{date:'12/04',w:'金',airline:'',no:'',from:'成田 NRT',to:'桃園 TPE',dep:'',arr:'',note:'返程',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''}];
 const normFl=f=>({date:'',w:'',airline:'',no:'',from:'',to:'',dep:'',arr:'',note:'',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:'',...(f||{})});
 const mealLabel=m=>({yes:'有提供',no:'不提供',unk:'未確認'}[m]||'');
 const WJP={'日':'日','一':'月','二':'火','三':'水','四':'木','五':'金','六':'土','月':'月','火':'火','水':'水','木':'木','金':'金','土':'土'};
@@ -1189,6 +1206,7 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
  view:r=>{const n=r.cin&&r.cout?Math.round((new Date(r.cout)-new Date(r.cin))/864e5):0,dd=s=>s?s.slice(5).replace('-','/'):'';
   return `<div class="card sp stay-card">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="dayhead"><h3>${esc(r.name)||'（尚未填寫住宿名稱）'}</h3>${r.area?`<span class="badge">${esc(r.area)}</span>`:''}</div><div class="meta">${dd(r.cin)} → ${dd(r.cout)}${n>0?'（'+n+' 晚）':''}${r.tin?'　入住 '+esc(r.tin):''}${r.tout?'　退房 '+esc(r.tout):''}</div>${r.addr?`<div class="rowline">📍 ${esc(r.addr)}</div>`:''}${r.tel?`<div class="rowline">☎ ${esc(r.tel)}</div>`:''}${r.bk?`<div class="rowline">訂單編號：${esc(r.bk)}</div>`:''}${(r.am||[]).length?`<div class="am-label">房內設備</div><div class="chips">${r.am.map(a=>`<span class="${a.has?'am on':'am'}">${a.has?'✓':'·'} ${esc(a.n)}</span>`).join('')}</div>`:''}${r.note?`<div class="note">${esc(r.note)}</div>`:''}</div></div>`}});
 (()=>{const full=STAY.render,box=document.getElementById('stay'),dd=s=>s?s.slice(5).replace('-','/'):'';
+ const refreshDays=()=>{try{if(typeof renderView==='function'&&!edit)renderView()}catch(e){}};
  STAY.render=function(){
   if(STAY.d)return full();
   if(typeof curSec!=='undefined'&&curSec==='home'){
@@ -1198,10 +1216,11 @@ const STAY=mkList({box:'stay',doc:'stays',title:'宿泊情報',noun:'住宿',
     return `<div class="card sp">${mediaRail(asImgs(r.imgs),r.name)}<div class="sb"><div class="n">${esc(r.name)||'（尚未填寫住宿名稱）'}</div><div class="m">${esc(meta)}</div></div></div>`;
    }).join(''):'';
    box.innerHTML=`<div class="stay-home">${cards?`<div class="srow">${cards}</div>`:'<div class="card tbd" style="margin:0">尚未新增住宿</div>'}<div class="bar"><button class="more" type="button" data-a="viewall">查看所有住宿 <span class="arr" aria-hidden="true">→</span></button></div></div>`;
-   return;
+   refreshDays();return;
   }
-  full();
+  full();refreshDays();
  };
+ const set0=STAY.set;STAY.set=l=>{set0(l);refreshDays()};
  box.addEventListener('click',e=>{if(e.target.closest('[data-a="viewall"]')&&typeof openSec==='function')openSec('s-stay',true,true)});
 })();
 function mdKey(s){const m=String(s||'').match(/(\d{1,2})\D+(\d{1,2})/);return m?`${+m[1]}/${+m[2]}`:''}
@@ -1403,7 +1422,8 @@ if(yakuBox){
 }
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-yaku','日本語ほんやく'],['s-acct','記帳']];
 const CLICK_SFX=[
- {id:'kira',name:'きらきら',tip:'點擊分頁／進入編輯'},
+ {id:'koron',name:'ころん',tip:'點擊分頁'},
+ {id:'kira',name:'きらきら',tip:'進入編輯'},
  {id:'piyo',name:'ぴよ',tip:'儲存／取消'},
  {id:'fuwa',name:'ふわっ',tip:'查看動作'}
 ];
@@ -1447,7 +1467,7 @@ function openSec(id,jump,quiet){
  try{sessionStorage.setItem('fuyu-sec',id)}catch(e){}
  try{const h=id==='home'?'':('#'+id);if(location.hash!==h)history.replaceState(null,'',h||(location.pathname+location.search))}catch(e){}
  try{if(typeof STAY!=='undefined'&&STAY.render)STAY.render()}catch(e){}
- if(jump){if(changed&&!quiet)playClickSfx('kira');try{document.querySelector('main').scrollIntoView()}catch(e){}}
+ if(jump){if(changed&&!quiet)playClickSfx('koron');try{document.querySelector('main').scrollIntoView()}catch(e){}}
 }
 function tgl(o){dr.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
 mb.onclick=()=>tgl(!dr.classList.contains('open'));
