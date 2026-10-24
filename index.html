@@ -253,6 +253,16 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 .dl button.act{color:var(--acc);font-weight:600}
 .dl button .ico-snow{width:14px;height:14px;flex:0 0 auto;opacity:.72;color:var(--acc)}
 .dl button.act .ico-snow{opacity:1}
+.sfx-box{margin-top:18px;padding-top:12px;border-top:1px dashed var(--line)}
+.sfx-box .sx{font-size:11px;letter-spacing:.14em;color:var(--mute);margin:0 0 8px}
+.sfx-box .sx b{color:var(--acc);font-weight:600}
+.sfx-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sfx-grid button{font:inherit;font-size:11px;letter-spacing:.04em;text-align:left;padding:7px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.28);color:var(--ink);cursor:pointer;line-height:1.35}
+.sfx-grid button small{display:block;font-size:10px;color:var(--mute);letter-spacing:.02em;margin-top:2px}
+.sfx-grid button.on{border-color:var(--acc);background:rgba(61,111,158,.12);color:var(--acc)}
+.sfx-grid button.off{grid-column:1/-1;text-align:center;opacity:.85}
+@media(prefers-color-scheme:dark){.sfx-grid button{background:rgba(20,40,60,.35)}}
+:root[data-theme="dark"] .sfx-grid button{background:rgba(20,40,60,.35)}
 .sec{display:none}.sec.on{display:block}
 .tl li.hasimg{display:flex;gap:12px;align-items:flex-start}.tl .tx{flex:1;min-width:0}
 .tl .tr{padding:2px 0 14px 14px;list-style:none}
@@ -420,7 +430,7 @@ label{font-size:11px;margin-bottom:6px}
   </div>
  </div>
 </div>
-<div id="drawer"><div class="ov"></div><nav class="pn"><div class="dt">ふゆものがたり · 目錄</div><div class="dl"></div></nav></div>
+<div id="drawer"><div class="ov"></div><nav class="pn"><div class="dt">ふゆものがたり · 目錄</div><div class="dl"></div><div class="sfx-box" id="sfxbox"><div class="sx">點擊音效 · 點一下可試聽</div><div class="sfx-grid" id="sfxgrid"></div></div></nav></div>
 <header class="hero">
 <canvas id="snow"></canvas>
 <div class="en">Hokkaido · Tokyo · Winter 2026</div>
@@ -1392,11 +1402,52 @@ if(yakuBox){
  });
 }
 const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-yaku','日本語ほんやく'],['s-acct','記帳']];
+const CLICK_SFX=[
+ {id:'yuki',name:'雪の粒',tip:'輕柔高音小點'},
+ {id:'suzu',name:'鈴の音',tip:'清亮小鈴鐺'},
+ {id:'pochi',name:'ぽちっ',tip:'軟軟一點擊'},
+ {id:'kira',name:'きらきら',tip:'兩聲閃亮'},
+ {id:'mizu',name:'水玉',tip:'水滴泡泡'},
+ {id:'piyo',name:'ぴよ',tip:'小鳥啾一聲'},
+ {id:'koron',name:'ころん',tip:'軟木琴撥弦'},
+ {id:'chirin',name:'ちりん',tip:'細細鐘聲'},
+ {id:'fuwa',name:'ふわっ',tip:'蓬鬆輕飄'},
+ {id:'konkon',name:'こんこん',tip:'輕輕兩下敲'}
+];
+let clickSfxId='yuki',clickActx=null;
+try{clickSfxId=localStorage.getItem('fuyu-click-sfx')||'yuki'}catch(e){}
+function clickAudio(){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;if(!clickActx)clickActx=new AC();if(clickActx.state==='suspended')clickActx.resume();return clickActx}
+function clickTone(ctx,dest,freq,t0,dur,type,vol,slide){
+ const o=ctx.createOscillator(),g=ctx.createGain();o.type=type||'sine';
+ o.frequency.setValueAtTime(freq,t0);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,slide),t0+dur);
+ g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(Math.max(0.001,vol),t0+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+ o.connect(g);g.connect(dest);o.start(t0);o.stop(t0+dur+0.03)}
+function playClickSfx(id){
+ const key=id==null?clickSfxId:id;if(!key||key==='off')return;
+ const ctx=clickAudio();if(!ctx)return;const t0=ctx.currentTime+0.01,master=ctx.createGain();master.gain.value=0.22;master.connect(ctx.destination);
+ if(key==='yuki'){clickTone(ctx,master,1320,t0,0.12,'sine',0.9,880);clickTone(ctx,master,1980,t0+0.03,0.1,'triangle',0.35,1400)}
+ else if(key==='suzu'){clickTone(ctx,master,1568,t0,0.22,'sine',0.7,1174);clickTone(ctx,master,2349,t0,0.18,'sine',0.35,1760);clickTone(ctx,master,3136,t0+0.02,0.14,'triangle',0.18,2200)}
+ else if(key==='pochi'){clickTone(ctx,master,520,t0,0.08,'triangle',0.85,220);clickTone(ctx,master,780,t0+0.02,0.07,'sine',0.4,400)}
+ else if(key==='kira'){clickTone(ctx,master,1175,t0,0.1,'sine',0.7,1760);clickTone(ctx,master,1568,t0+0.09,0.12,'sine',0.65,2093)}
+ else if(key==='mizu'){clickTone(ctx,master,880,t0,0.14,'sine',0.55,420);clickTone(ctx,master,1320,t0+0.05,0.16,'sine',0.4,660)}
+ else if(key==='piyo'){clickTone(ctx,master,1480,t0,0.07,'square',0.28,1800);clickTone(ctx,master,1760,t0+0.06,0.09,'square',0.22,2100)}
+ else if(key==='koron'){clickTone(ctx,master,659,t0,0.16,'triangle',0.75,523);clickTone(ctx,master,988,t0+0.04,0.14,'sine',0.35,784)}
+ else if(key==='chirin'){clickTone(ctx,master,2093,t0,0.2,'sine',0.55,1568);clickTone(ctx,master,2637,t0+0.01,0.16,'triangle',0.25,2093)}
+ else if(key==='fuwa'){clickTone(ctx,master,392,t0,0.22,'sine',0.5,620);clickTone(ctx,master,584,t0+0.03,0.2,'triangle',0.28,880)}
+ else if(key==='konkon'){clickTone(ctx,master,280,t0,0.07,'triangle',0.7,140);clickTone(ctx,master,320,t0+0.1,0.08,'triangle',0.55,150)}
+}
+function renderSfxPicker(){
+ const grid=document.getElementById('sfxgrid');if(!grid)return;
+ const cur=CLICK_SFX.find(x=>x.id===clickSfxId);
+ const label=document.querySelector('#sfxbox .sx');if(label)label.innerHTML=clickSfxId==='off'?'點擊音效 · <b>已關閉</b>':`點擊音效 · 目前：<b>${cur?cur.name:'—'}</b>（點一下可試聽）`;
+ grid.innerHTML=CLICK_SFX.map(x=>`<button type="button" data-sfx="${x.id}" class="${x.id===clickSfxId?'on':''}">${x.name}<small>${x.tip}</small></button>`).join('')+`<button type="button" class="off${clickSfxId==='off'?' on':''}" data-sfx="off">關閉音效</button>`;
+}
 const dr=document.getElementById('drawer'),mb=document.getElementById('mb'),goHome=document.getElementById('goHome');
-let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">${SNOW_ICO}<span>${t}</span></button>`).join('')}buildMenu();
+let curSec='home';function buildMenu(){dr.querySelector('.dl').innerHTML=SECS.filter(([id])=>id!=='s-acct'||canEdit).map(([id,t])=>`<button data-s="${id}" class="${id===curSec?'act':''}">${SNOW_ICO}<span>${t}</span></button>`).join('')}buildMenu();renderSfxPicker();
 function validSec(id){return SECS.some(([s])=>s===id&&(s!=='s-acct'||canEdit))}
 function openSec(id,jump){
  if(!validSec(id))id='home';
+ const changed=id!==curSec;
  curSec=id;
  document.querySelectorAll('.sec').forEach(x=>x.classList.toggle('on',(id==='home'&&!x.classList.contains('noh'))||x.id===id));
  dr.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('act',b.dataset.s===id));
@@ -1404,12 +1455,16 @@ function openSec(id,jump){
  try{sessionStorage.setItem('fuyu-sec',id)}catch(e){}
  try{const h=id==='home'?'':('#'+id);if(location.hash!==h)history.replaceState(null,'',h||(location.pathname+location.search))}catch(e){}
  try{if(typeof STAY!=='undefined'&&STAY.render)STAY.render()}catch(e){}
- if(jump){try{document.querySelector('main').scrollIntoView()}catch(e){}}
+ if(jump){if(changed)playClickSfx();try{document.querySelector('main').scrollIntoView()}catch(e){}}
 }
 function tgl(o){dr.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
 mb.onclick=()=>tgl(!dr.classList.contains('open'));
 if(goHome)goHome.onclick=()=>{tgl(false);openSec('home',true);try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}};
-dr.addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){openSec(b.dataset.s,true);tgl(false)}else if(e.target.classList.contains('ov'))tgl(false)});
+dr.addEventListener('click',e=>{
+ const sx=e.target.closest('[data-sfx]');
+ if(sx){clickSfxId=sx.dataset.sfx||'off';try{localStorage.setItem('fuyu-click-sfx',clickSfxId)}catch(err){}renderSfxPicker();playClickSfx(clickSfxId);return}
+ const b=e.target.closest('[data-s]');if(b){openSec(b.dataset.s,true);tgl(false)}else if(e.target.classList.contains('ov'))tgl(false)
+});
 addEventListener('keydown',e=>{if(e.key==='Escape')tgl(false)});
 addEventListener('hashchange',()=>{const id=(location.hash||'').replace(/^#/,'')||'home';if(validSec(id))openSec(id,false)});
 (()=>{let id=(location.hash||'').replace(/^#/,'');if(!id){try{id=sessionStorage.getItem('fuyu-sec')||''}catch(e){id=''}}openSec(validSec(id)?id:'home',false)})();
