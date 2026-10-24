@@ -137,7 +137,7 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd{display:flex;flex-direction:column;gap:14px;max-width:760px}
 #ootd .ootd-heads{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:2;padding:4px 0 2px;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
 #ootd .ootd-heads span{font-size:12px;letter-spacing:.14em;color:var(--acc);text-align:center;padding:6px 8px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
-#ootd .ootd-day{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+#ootd .ootd-day{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch}
 #ootd .ootd-day .odate{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:0;min-height:36px}
 #ootd .ootd-day .odate b{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:400;color:var(--acc);letter-spacing:.04em;line-height:1;margin:0}
 #ootd .ootd-day .odate small{font-size:11px;color:var(--mute);letter-spacing:.1em;line-height:1}
@@ -147,15 +147,16 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd .ootd-actions .ootd-link:hover{opacity:1;text-decoration:underline;text-underline-offset:3px}
 #ootd .ootd-actions .ootd-link.me{justify-self:start}
 #ootd .ootd-actions .ootd-link.him{margin-left:auto;text-align:right}
-#ootd .ootd-card{padding:0;margin:0;overflow:hidden;border-radius:12px;box-shadow:0 8px 22px -16px rgba(20,50,90,.32)}
+#ootd .ootd-card{padding:0;margin:0;overflow:hidden;border-radius:12px;box-shadow:0 8px 22px -16px rgba(20,50,90,.32);height:100%;display:flex;flex-direction:column;min-height:0}
 #ootd .ootd-card.him{border-color:rgba(120,150,180,.28)}
+#ootd .ootd-card .sp-media,#ootd .ootd-card>.ph{flex:0 0 auto}
 #ootd .ootd-card .sp-rail img,#ootd .ootd-card .ph{aspect-ratio:3/4}
 #ootd .ootd-card .sp-dots{bottom:6px;gap:4px}
 #ootd .ootd-card .sp-dots i{width:5px;height:5px}
-#ootd .ootd-card .sb{padding:9px 11px 11px}
+#ootd .ootd-card .sb{padding:9px 11px 11px;flex:1 1 auto;display:flex;flex-direction:column}
 #ootd .ootd-card .om{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
 #ootd .ootd-card .om .badge{font-size:10px;padding:1px 7px;letter-spacing:.06em}
-#ootd .ootd-card .on{margin-top:5px;font-size:12px;line-height:1.4;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#ootd .ootd-card .on{margin-top:5px;font-size:12px;line-height:1.4;color:var(--mute);flex:1 1 auto;white-space:pre-wrap}
 #ootd .ootd-card .tbd{margin:4px 0 0;padding:0;font-size:11px}
 #ootd .ootd-dayimgs{display:flex;gap:4px;overflow-x:auto;margin:0;padding:0;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;align-items:center}
 #ootd .ootd-dayimgs::-webkit-scrollbar{display:none;width:0;height:0}
@@ -350,7 +351,7 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 #ootd .ootd-day .odate b{font-size:16px}
 #ootd .ootd-card{border-radius:10px}
 #ootd .ootd-card .sb{padding:8px 9px 9px}
-#ootd .ootd-card .on{font-size:11px;-webkit-line-clamp:2}
+#ootd .ootd-card .on{font-size:11px}
 #ootd .ootd-dayimgs{gap:3px}
 #ootd .ootd-dayimgs img{width:28px;height:28px;border-radius:6px}
 .tabs{gap:6px;padding:2px 0 8px}
