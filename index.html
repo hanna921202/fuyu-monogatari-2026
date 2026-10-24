@@ -138,9 +138,10 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd .ootd-heads{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:2;padding:4px 0 2px;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
 #ootd .ootd-heads span{font-size:12px;letter-spacing:.14em;color:var(--acc);text-align:center;padding:6px 8px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
 #ootd .ootd-day{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
-#ootd .ootd-day .odate{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;margin:2px 0 0}
-#ootd .ootd-day .odate b{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:400;color:var(--acc);letter-spacing:.04em}
-#ootd .ootd-day .odate small{font-size:11px;color:var(--mute);letter-spacing:.1em}
+#ootd .ootd-day .odate{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:0;min-height:36px}
+#ootd .ootd-day .odate b{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:400;color:var(--acc);letter-spacing:.04em;line-height:1;margin:0}
+#ootd .ootd-day .odate small{font-size:11px;color:var(--mute);letter-spacing:.1em;line-height:1}
+#ootd .ootd-day .odate .ootd-dayimgs{margin:0 0 0 auto;padding:0;flex:1;min-width:0;justify-content:flex-end}
 #ootd .ootd-actions{display:flex;flex-wrap:wrap;gap:8px}
 #ootd .ootd-card{padding:0;margin:0;overflow:hidden;border-radius:12px;box-shadow:0 8px 22px -16px rgba(20,50,90,.32)}
 #ootd .ootd-card.him{border-color:rgba(120,150,180,.28)}
@@ -152,7 +153,7 @@ select{display:block;width:100%;font:inherit;font-size:15px;color:var(--ink);bac
 #ootd .ootd-card .om .badge{font-size:10px;padding:1px 7px;letter-spacing:.06em}
 #ootd .ootd-card .on{margin-top:5px;font-size:12px;line-height:1.4;color:var(--mute);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #ootd .ootd-card .tbd{margin:4px 0 0;padding:0;font-size:11px}
-#ootd .ootd-dayimgs{display:flex;gap:4px;overflow-x:auto;margin-top:4px;padding-bottom:1px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+#ootd .ootd-dayimgs{display:flex;gap:4px;overflow-x:auto;margin:0;padding:0;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;align-items:center}
 #ootd .ootd-dayimgs::-webkit-scrollbar{display:none;width:0;height:0}
 #ootd .ootd-dayimgs img{flex:0 0 auto;width:36px;height:36px;object-fit:cover;border-radius:7px;background:var(--bg2);cursor:zoom-in;display:block}
 #ootd .ootd-edit .item{position:relative}
