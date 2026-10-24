@@ -1327,8 +1327,7 @@ function renderYaku(){
  if(!yakuBox)return;
  const m=yakuLangMeta();
  const phrases=YAKU_PHRASES.map(p=>`<div class="phrase"><div class="zh">${esc(p.zh)}</div><div class="ja">${esc(p.ja)}</div><div class="ro">${esc(p.ro)}</div><button type="button" class="yaku-ico" data-a="phrasesay" data-ja="${esc(p.ja)}" aria-label="播放日文" title="播放日文">${YAKU_ICO_PLAY}</button></div>`).join('');
- yakuBox.innerHTML=`<div class="yaku-block"><h3>常用日語</h3><div class="phrase-list">${phrases}</div></div>
- <div class="yaku-block"><h3>中日互譯</h3><div class="card yaku-box">
+ yakuBox.innerHTML=`<div class="yaku-block"><h3>中日互譯</h3><div class="card yaku-box">
   <div class="yaku-dir"><span class="lang${yakuDir==='zh-ja'?' on':''}">中文</span><button type="button" class="swap" data-a="yakuswap" title="切換方向">⇄ 切換</button><span class="lang${yakuDir==='ja-zh'?' on':''}">日文</span></div>
   <div class="yaku-io">
    <div class="yaku-pane"><label>輸入（${esc(m.fromLabel)}）</label><textarea id="yaku-in" placeholder="輸入文字，或按麥克風錄音轉文字…"></textarea>
@@ -1340,7 +1339,8 @@ function renderYaku(){
   </div>
   <p class="yaku-hint">翻譯使用 Google。手機請點喇叭圖示播放（系統語音）；電腦翻譯後會自動朗讀，也可再點播放重播。</p>
   <div class="yaku-status" id="yaku-st"></div>
- </div></div>`;
+ </div></div>
+ <div class="yaku-block"><h3>常用日語</h3><div class="phrase-list">${phrases}</div></div>`;
  if(yakuListening){const b=yakuBox.querySelector('[data-a="yakumic"]');if(b)b.classList.add('on')}
  yakuWarmVoices();
  const tin=document.getElementById('yaku-in');if(tin)tin.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();yakuDoTranslate()}});
