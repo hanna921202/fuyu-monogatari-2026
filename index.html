@@ -1329,7 +1329,7 @@ function normalizeOotdList(L){
 function ootdCardHTML(r){
  const him=ootdWho(r)==='him';
  const tags=[r.temp,r.place].filter(Boolean).map(t=>`<span class="badge">${esc(t)}</span>`).join('');
- return`<div class="card ootd-card${him?' him':''}">${mediaRail(asImgs(r.imgs),'')}<div class="sb">${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:`<div class="tbd">${him?'還沒放穿搭':'尚未寫穿搭'}</div>`}</div></div>`;
+ return`<div class="card ootd-card${him?' him':''}">${mediaRail(asImgs(r.imgs),'')}<div class="sb">${tags?`<div class="om">${tags}</div>`:''}${r.note?`<div class="on">${esc(r.note)}</div>`:''}</div></div>`;
 }
 const OOTD=mkList({box:'ootd',doc:'ootd',title:'每日穿搭',noun:'一天',big:true,
  groups:[['imgs','新增穿搭照（可多張，不會覆蓋）']],
