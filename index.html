@@ -870,26 +870,25 @@ const toJpW=w=>WJP[String(w||'').trim()]||w;
 const WCATS0=['北海道','東京'];
 /* 景點圖片對應每日行程 images/ */
 const WSPOTS0=[
-{region:'北海道',name:'二條市場',img:'images/DAY1-02.jpg'},{region:'北海道',name:'狸小路商店街',img:'images/DAY1-03.jpg'},{region:'北海道',name:'中島公園',img:'images/DAY1-04.jpg'},{region:'北海道',name:'大通公園',img:'images/DAY1-05.jpg'},{region:'北海道',name:'薄野',img:'images/DAY1-06.jpg'},
-{region:'北海道',name:'旭山動物園',img:'images/DAY2-02.jpg'},{region:'北海道',name:'美瑛・四季彩之丘',img:'images/DAY2-03.jpg'},{region:'北海道',name:'富良野 森林精靈露臺',img:'images/DAY2-04.jpg'},
-{region:'北海道',name:'北海道神宮',img:'images/DAY3-01.jpg'},{region:'北海道',name:'定山溪溫泉',img:'images/DAY3-02.jpg'},{region:'北海道',name:'小樽運河',img:'images/DAY3-04.jpg'},{region:'北海道',name:'堺町通',img:'images/DAY3-05.jpg'},{region:'北海道',name:'天狗山夜景',img:'images/DAY3-08.jpg'},
-{region:'北海道',name:'新千歲機場（前往東京）',img:''},
-{region:'東京',name:'原宿',img:'images/DAY5-01.jpg'},{region:'東京',name:'新宿',img:'images/DAY5-04.jpg'},{region:'東京',name:'花園神社',img:'images/DAY5-02.jpg'},
-{region:'東京',name:'川越一番街商店街',img:'images/DAY8-01.jpg'},{region:'東京',name:'藏造老屋街道',img:'images/DAY8-02.jpg'},
+{region:'北海道',name:'二條市場',img:'images/DAY1-02.jpg'},{region:'北海道',name:'電視塔',img:'c4963d61c1e848d9944bd57bf0be57c9'},{region:'北海道',name:'AOAO水族館',img:'e707e99b5ac3438e9f7625e24486bd34'},{region:'北海道',name:'狸小路商店街',img:'images/DAY1-03.jpg'},{region:'北海道',name:'薄野',img:'images/DAY1-06.jpg'},
+{region:'北海道',name:'旭山動物園',img:'images/DAY2-02.jpg'},{region:'北海道',name:'富良野 森林精靈露臺',img:'images/DAY2-04.jpg'},
+{region:'北海道',name:'北海道神宮',img:'images/DAY3-01.jpg'},{region:'北海道',name:'藻岩山纜車',img:'332de7483b354d37a00ba1ca1041e9e4'},{region:'北海道',name:'小樽運河',img:'images/DAY3-04.jpg'},{region:'北海道',name:'堺町通',img:'images/DAY3-05.jpg'},{region:'北海道',name:'定山溪溫泉',img:'3fc1d4f451fe4cbdb64a537540cf9adb'},{region:'北海道',name:'大通公園',img:'d5acc940db7047db95cb54f46622e8f0'},
+{region:'東京',name:'蒲田',img:'9fcbd61ff8b345fca60000bf1ee550a5'},{region:'東京',name:'原宿',img:'images/DAY5-01.jpg'},{region:'東京',name:'花園神社',img:'images/DAY5-02.jpg'},{region:'東京',name:'涉谷',img:'65484fdc79ed43b5bf19496b5bff6df9'},{region:'東京',name:'無印良品 新宿靖國通',img:'images/DAY5-03.jpg'},{region:'東京',name:'新宿',img:'images/DAY5-04.jpg'},
+{region:'東京',name:'川越一番街商店街',img:'images/DAY8-01.jpg'},{region:'東京',name:'藏造老屋街道',img:'images/DAY8-02.jpg'},{region:'東京',name:'池袋-太陽城',img:'d984327553be44e3895cd5f80c1b05b5'},
 {region:'東京',name:'東京迪士尼',img:'images/DAY7-01.jpg'},
-{region:'東京',name:'淺草寺',img:'images/DAY6-01.jpg'},{region:'東京',name:'秋葉原',img:'images/DAY6-02.jpg'},{region:'東京',name:'蒲田',img:''},
+{region:'東京',name:'淺草寺',img:'images/DAY6-01.jpg'},{region:'東京',name:'秋葉原',img:'images/DAY6-02.jpg'},{region:'東京',name:'台場',img:'98afd1a9b3d54416b0a8a0de9929d2fe'},
 {region:'東京',name:'酒酒井 Outlet',img:'images/DAY9-02.jpg'},{region:'東京',name:'成田山新勝寺',img:'images/DAY9-03.jpg'}
 ];
 function itineraryImgMap(){
  const map={};
  const src=typeof DAYS!=='undefined'&&DAYS.length?DAYS:BASE;
  (src||[]).forEach(d=>(d.items||[]).forEach(it=>{if(it&&it.img&&it.n)map[spotNameFix(String(it.n).trim())]=it.img}));
- const alias={'美瑛・四季彩之丘':['美瑛 & 四季彩之丘'],'定山溪溫泉':['定山溪神社 & 溫泉日歸泡湯','定山溪'],'天狗山夜景':['山頂展望台賞夜景','天狗山'],'新千歲機場（前往東京）':['新千歲機場 → 羽田機場','新千歲機場'],'東京迪士尼':['東京迪士尼'],'川越一番街商店街':['川越一番街商店街'],'酒酒井 Outlet':['酒酒井 Outlet'],'\u84b2\u7530':['\u8386\u7530']};
+ const alias={'定山溪溫泉':['定山溪神社 & 溫泉日歸泡湯','定山溪'],'東京迪士尼':['東京迪士尼'],'川越一番街商店街':['川越一番街商店街'],'酒酒井 Outlet':['酒酒井 Outlet'],'池袋-太陽城':['太陽城','池袋太陽城'],'\u84b2\u7530':['\u8386\u7530']};
  Object.keys(alias).forEach(k=>alias[k].forEach(a=>{if(map[a]&&!map[k])map[k]=map[a]}));
  WSPOTS0.forEach(s=>{if(s.img&&!map[s.name])map[s.name]=s.img});
  return map;
 }
-function spotNameFix(n){return n==='\u8386\u7530'?'\u84b2\u7530':n}
+function spotNameFix(n){const s=String(n||'').trim();if(s==='\u8386\u7530')return'\u84b2\u7530';if(s==='定山溪神社 & 溫泉日歸泡湯')return'定山溪溫泉';return s}
 function isAirportArrivalSpot(n,m){
  const text=String(n||'')+' '+String(m||'');
  if(!/機場|空港|Airport/i.test(text))return false;
