@@ -502,7 +502,10 @@ function storeStamp(s){return (s&&s.meta&&s.meta.updatedAt)||''}
 function storeReady(s){return !!(s&&typeof s==='object'&&(s.trip||s.days||s.ledger||s.blobs||s.meta))}
 function emit(name){const cols=STORE[name]||{};const sn={docs:Object.keys(cols).map(id=>({id,data:()=>cols[id]}))};(listeners[name]||[]).forEach(fn=>{try{fn(sn)}catch(e){}})}
 function emitAll(){Object.keys(listeners).forEach(emit);try{if(typeof applyStore==='function'){applyStore();if(typeof renderTrip==='function')renderTrip();if(typeof renderTabs==='function')renderTabs();if(typeof renderView==='function'&&!edit)renderView()}}catch(e){}}
-function listFilledScore(list){return (list||[]).reduce((s,r)=>{if(!r||typeof r!=='object')return s;let n=0;if(String(r.name||'').trim())n+=3;if((r.imgs&&r.imgs.length)||r.img)n+=2;if(r.cin||r.cout||r.addr||r.bk||r.note)n+=1;return s+n},0)}
+function listImgsOf(r){const v=r&&r.imgs;if(Array.isArray(v)&&v.length)return v.map(String).filter(Boolean);if(r&&r.img)return[String(r.img)];return[]}
+/* 雲端 blob id（無斜線）優先於本機路徑 images/...，避免手機被舊路徑蓋掉圖 */
+function imgRefScore(id){if(!id)return 0;const s=String(id);if(s.indexOf('data:')===0)return 3;if(/[\/]/.test(s))return 1;return 4}
+function listFilledScore(list){return (list||[]).reduce((s,r)=>{if(!r||typeof r!=='object')return s;let n=0;if(String(r.name||'').trim())n+=3;const imgs=listImgsOf(r);if(imgs.length)n+=2+imgs.reduce((t,id)=>t+imgRefScore(id),0);if(r.cin||r.cout||r.addr||r.bk||r.note)n+=1;return s+n},0)}
 function preferTripDoc(a,b){
  if(a==null)return b;if(b==null)return a;
  const la=a&&a.list,lb=b&&b.list;
