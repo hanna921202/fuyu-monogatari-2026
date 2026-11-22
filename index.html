@@ -975,8 +975,8 @@ function renderTransit(){
  const total=TRANSIT.reduce((s,d)=>s+dayYen(d.legs),0);
  const daysN=TRANSIT.filter(d=>(d.legs||[]).length).length;
  if(tabs){
-  tabs.innerHTML=`<button type="button" class="tab${trTab==='all'?' on':''}" data-tr="all"><b>全部</b><span class="c">¥${nf(total,0)}</span></button>`+
-   TRANSIT.map(d=>`<button type="button" class="tab${trTab===d.d?' on':''}" data-tr="${esc(d.d)}"><b>${esc(d.d)}</b><span class="c">${(d.legs||[]).length?('¥'+nf(dayYen(d.legs),0)):'—'}</span></button>`).join('');
+  tabs.innerHTML=`<button type="button" class="tab" data-tr="all" aria-selected="${trTab==='all'}"><b>全部</b><span class="c">¥${nf(total,0)}</span></button>`+
+   TRANSIT.map(d=>`<button type="button" class="tab" data-tr="${esc(d.d)}" aria-selected="${trTab===d.d}"><b>${esc(d.d)}</b><span class="c">${(d.legs||[]).length?('¥'+nf(dayYen(d.legs),0)):'—'}</span></button>`).join('');
  }
  const show=trTab==='all'?TRANSIT:TRANSIT.filter(d=>d.d===trTab);
  const html=show.map(d=>{
