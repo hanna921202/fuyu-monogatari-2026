@@ -79,6 +79,27 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .tbd{color:var(--mute);font-style:italic;padding:10px 0}
 .wish{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .wish h4{margin:0 0 8px;color:var(--acc);letter-spacing:.15em}
+#tr-tabs{margin:0 0 10px}
+#transit .tr-sum{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;margin:0 0 16px;padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+#transit .tr-sum b{font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:400;color:var(--acc);letter-spacing:.04em}
+#transit .tr-sum span{font-size:13px;color:var(--mute);letter-spacing:.08em}
+#transit .tr-days{display:grid;gap:12px}
+#transit .tr-day{border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+#transit .tr-day[hidden]{display:none!important}
+#transit .tr-hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+#transit .tr-hd .dd{font-family:"Cormorant Garamond",serif;font-size:22px;color:var(--acc);letter-spacing:.04em}
+#transit .tr-hd .dw{font-size:12px;color:var(--mute);letter-spacing:.12em;margin-left:6px}
+#transit .tr-hd .sum{font-family:"Cormorant Garamond",serif;font-size:18px;color:var(--ink)}
+#transit .tr-legs{list-style:none;margin:0;padding:4px 0}
+#transit .tr-legs li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:10px 16px;border-top:1px dashed rgba(120,150,180,.28)}
+#transit .tr-legs li:first-child{border-top:0}
+#transit .tr-route{font-size:14px;font-weight:600;letter-spacing:.02em;line-height:1.35;word-break:break-word}
+#transit .tr-route .arrow{color:var(--mute);font-weight:400;margin:0 .35em}
+#transit .tr-route .via{color:var(--mute);font-weight:400;font-size:.92em}
+#transit .tr-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;grid-column:1;min-width:0}
+#transit .tr-mode{font-size:11px;letter-spacing:.1em;padding:2px 9px;border-radius:99px;border:1px solid rgba(120,150,180,.35);color:var(--acc);background:rgba(120,150,180,.12)}
+#transit .tr-yen{font-family:"Cormorant Garamond",serif;font-size:18px;color:var(--ink);white-space:nowrap;grid-column:2;grid-row:1/span 2;align-self:center}
+#transit .tr-empty{padding:14px 16px;color:var(--mute);font-size:13px;font-style:italic}
 .chips{display:flex;flex-wrap:wrap;gap:8px}.chips span{border:1px solid var(--line);border-radius:99px;padding:2px 12px;font-size:14px}
 footer{text-align:center;color:var(--mute);font-size:13px;padding:30px 0 50px;letter-spacing:.15em}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
@@ -377,6 +398,19 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .ti{width:72px;height:54px;border-radius:8px}
 .wish{gap:8px;grid-template-columns:1fr}
 .wish h4{margin:0 0 6px;font-size:13px;letter-spacing:.1em}
+#transit .tr-sum{padding:10px 12px;margin:0 0 10px;border-radius:10px;gap:8px 14px}
+#transit .tr-sum b{font-size:22px}
+#transit .tr-sum span{font-size:12px}
+#transit .tr-days{gap:8px}
+#transit .tr-day{border-radius:10px}
+#transit .tr-hd{padding:10px 12px}
+#transit .tr-hd .dd{font-size:18px}
+#transit .tr-hd .sum{font-size:16px}
+#transit .tr-legs li{padding:8px 12px;gap:4px 10px}
+#transit .tr-route{font-size:13px}
+#transit .tr-mode{font-size:10px;padding:1px 8px}
+#transit .tr-yen{font-size:16px}
+#transit .tr-empty{padding:10px 12px;font-size:12px}
 .wg{gap:8px;padding:6px 0}
 .wd{flex:0 0 44px;font-size:14px}
 .chips{gap:5px}.chips span{padding:1px 8px;font-size:12px;border-radius:99px}
@@ -462,6 +496,10 @@ label{font-size:11px;margin-bottom:6px}
 
 </section>
 <section class="sec" id="s-stay"><h2>宿泊情報</h2><div id="stay"></div></section>
+<section class="sec" id="s-transit"><h2>交通明細</h2>
+<div class="tabs" id="tr-tabs" role="tablist"></div>
+<div id="transit"></div>
+</section>
 <section class="sec" id="s-days"><h2>每日行程</h2>
 <div class="tabs" id="tabs" role="tablist"></div>
 <div class="card" id="day"></div>
@@ -867,6 +905,95 @@ const FL0=[
 {date:'11/29',w:'日',airline:'',no:'',from:'新千歲 CTS',to:'羽田 HND',dep:'',arr:'',note:'北海道 → 東京',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''},
 {date:'12/04',w:'金',airline:'',no:'',from:'成田 NRT',to:'桃園 TPE',dep:'',arr:'',note:'返程',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:''}];
 const normFl=f=>({date:'',w:'',airline:'',no:'',from:'',to:'',dep:'',arr:'',note:'',bagLimit:'',bagActual:'',meal:'',seat1:'',seat2:'',...(f||{})});
+/* 手寫交通明細（不含機票） */
+const TRANSIT=[
+{d:'11/26',w:'木',legs:[
+ {from:'新千歲空港',to:'札幌',mode:'JR',yen:1150},
+ {from:'札幌市營',to:'大通',mode:'地下鐵',yen:210}
+]},
+{d:'11/27',w:'金',legs:[
+ {from:'札幌',to:'旭川',mode:'JR',yen:5490},
+ {from:'旭川',to:'旭山動物園',mode:'巴士',yen:670},
+ {from:'旭山動物園',to:'旭川',mode:'巴士',yen:670},
+ {from:'旭川',to:'富良野',mode:'JR',yen:1380},
+ {from:'富良野',to:'滝川',mode:'JR',yen:3080},
+ {from:'滝川',to:'札幌',mode:'JR',yen:1680}
+]},
+{d:'11/28',w:'土',legs:[
+ {from:'大通',to:'円山公園',mode:'地下鐵',yen:210},
+ {from:'西15丁目',to:'纜車入口',mode:'私鐵',yen:230},
+ {from:'纜車入口',to:'西4丁目',mode:'私鐵',yen:230},
+ {from:'大通',to:'札幌市營',mode:'地下鐵',yen:210},
+ {from:'札幌',to:'小樽',mode:'JR',yen:800},
+ {from:'小樽',to:'札幌',mode:'JR',yen:800}
+]},
+{d:'11/29',w:'日',legs:[]},
+{d:'11/30',w:'月',legs:[
+ {from:'羽田空港第3航廈',to:'天空橋',mode:'單軌',yen:177},
+ {from:'天空橋',to:'泉岳寺',mode:'私鐵',yen:180},
+ {from:'蒲田',to:'東新宿',via:'多摩川',mode:'私鐵',yen:428},
+ {from:'新宿三丁目',to:'新宿',mode:'地下鐵',yen:178},
+ {from:'新宿',to:'原宿',mode:'JR',yen:155},
+ {from:'原宿',to:'澀谷',mode:'JR',yen:155},
+ {from:'澀谷',to:'東新宿',mode:'地下鐵',yen:178}
+]},
+{d:'12/1',w:'火',legs:[
+ {from:'東新宿',to:'池袋',mode:'地下鐵',yen:178},
+ {from:'池袋',to:'川越',mode:'私鐵',yen:481},
+ {from:'川越',to:'池袋',mode:'私鐵',yen:481},
+ {from:'池袋',to:'新木場',mode:'地下鐵',yen:252},
+ {from:'新木場',to:'市川塩浜',mode:'JR',yen:253}
+]},
+{d:'12/2',w:'水',legs:[
+ {from:'市川塩浜',to:'舞浜',mode:'JR',yen:199},
+ {from:'度假區 Gateway',to:'東京迪士尼海洋',mode:'私鐵',yen:300},
+ {from:'東京迪士尼海洋',to:'度假區 Gateway',mode:'私鐵',yen:300},
+ {from:'舞浜',to:'市川塩浜',mode:'JR',yen:199}
+]},
+{d:'12/3',w:'木',legs:[
+ {from:'市川塩浜',to:'八丁堀',mode:'JR',yen:341},
+ {from:'八丁堀',to:'淺草',via:'上野',mode:'地下鐵',yen:209},
+ {from:'淺草',to:'淺草橋',mode:'地下鐵',yen:178},
+ {from:'淺草橋',to:'秋葉原',mode:'JR',yen:155},
+ {from:'秋葉原',to:'新橋',mode:'JR',yen:199},
+ {from:'新橋',to:'台場',mode:'私鐵',yen:325},
+ {from:'台場',to:'台場海濱公園',mode:'單軌',yen:189},
+ {from:'台場海濱公園',to:'新木場',mode:'私鐵',yen:272},
+ {from:'新木場',to:'市川塩浜',mode:'JR',yen:253}
+]},
+{d:'12/4',w:'金',legs:[
+ {from:'市川塩浜',to:'酒々井',via:'蘇我・千葉',mode:'JR',yen:902},
+ {from:'酒々井站',to:'Outlet',mode:'巴士',yen:210},
+ {from:'Outlet',to:'酒々井站',mode:'巴士',yen:210},
+ {from:'酒々井',to:'成田',mode:'JR',yen:209},
+ {from:'京成成田',to:'機場第2航廈',mode:'私鐵',yen:272}
+]}];
+function dayYen(legs){return (legs||[]).reduce((s,x)=>s+(+x.yen||0),0)}
+let trTab='all';
+function renderTransit(){
+ const box=document.getElementById('transit'),tabs=document.getElementById('tr-tabs');if(!box)return;
+ const total=TRANSIT.reduce((s,d)=>s+dayYen(d.legs),0);
+ const daysN=TRANSIT.filter(d=>(d.legs||[]).length).length;
+ if(tabs){
+  tabs.innerHTML=`<button type="button" class="tab${trTab==='all'?' on':''}" data-tr="all"><b>全部</b><span class="c">¥${nf(total,0)}</span></button>`+
+   TRANSIT.map(d=>`<button type="button" class="tab${trTab===d.d?' on':''}" data-tr="${esc(d.d)}"><b>${esc(d.d)}</b><span class="c">${(d.legs||[]).length?('¥'+nf(dayYen(d.legs),0)):'—'}</span></button>`).join('');
+ }
+ const show=trTab==='all'?TRANSIT:TRANSIT.filter(d=>d.d===trTab);
+ const html=show.map(d=>{
+  const sum=dayYen(d.legs);
+  if(!(d.legs||[]).length)return`<article class="tr-day" data-d="${esc(d.d)}"><div class="tr-hd"><div><span class="dd">${esc(d.d)}</span><span class="dw">（${esc(toJpW(d.w))}）</span></div><div class="sum">—</div></div><div class="tr-empty">本日無地面交通紀錄</div></article>`;
+  const legs=d.legs.map(L=>{
+   const route=esc(L.from)+`<span class="arrow">→</span>`+(L.via?`<span class="via">${esc(L.via)}</span><span class="arrow">→</span>`:'')+esc(L.to);
+   return`<li><div class="tr-route">${route}</div><div class="tr-meta"><span class="tr-mode">${esc(L.mode)}</span></div><div class="tr-yen">¥${nf(L.yen,0)}</div></li>`;
+  }).join('');
+  return`<article class="tr-day" data-d="${esc(d.d)}"><div class="tr-hd"><div><span class="dd">${esc(d.d)}</span><span class="dw">（${esc(toJpW(d.w))}）</span></div><div class="sum">¥${nf(sum,0)}</div></div><ul class="tr-legs">${legs}</ul></article>`;
+ }).join('');
+ box.innerHTML=`<div class="tr-sum"><b>¥${nf(total,0)}</b><span>地面交通合計 · ${daysN} 天有紀錄</span></div><div class="tr-days">${html||'<div class="tr-empty">尚無資料</div>'}</div>`;
+}
+document.getElementById('tr-tabs')?.addEventListener('click',e=>{
+ const b=e.target.closest('[data-tr]');if(!b)return;
+ trTab=b.dataset.tr||'all';renderTransit();
+});
 const mealLabel=m=>({yes:'有提供',no:'不提供',unk:'未確認'}[m]||'');
 const WJP={'日':'日','一':'月','二':'火','三':'水','四':'木','五':'金','六':'土','月':'月','火':'火','水':'水','木':'木','金':'金','土':'土'};
 const toJpW=w=>WJP[String(w||'').trim()]||w;
@@ -1002,7 +1129,7 @@ function renderWish(){
     ${S.length?`<div class="srow">${S.map(s=>spotCard(s)).join('')}</div>`:'<div class="card tbd" style="margin:0 0 8px">尚無景點</div>'}
     <div class="bar" style="margin-top:4px">${canEdit?`<button class="btn s" data-a="editspots" data-region="${esc(c)}">✎ 景點</button>`:''}<button class="more" type="button" data-a="viewregion" data-region="${esc(c)}">查看所有景點 →</button></div></div>`}).join('')}`;
 }
-function renderTrip(){renderFlights();renderWish();renderShop();renderPack();renderCur();buildMenu();renderAcct();STAY.render();OOTD.render();JNL.render()}
+function renderTrip(){renderFlights();renderWish();renderShop();renderPack();renderCur();buildMenu();renderAcct();STAY.render();OOTD.render();JNL.render();renderTransit()}
 flBox.addEventListener('input',e=>{const f=e.target.dataset.f,it=e.target.closest('.item');if(eF&&f&&it)dF[+it.dataset.i][f]=e.target.value});
 flBox.addEventListener('change',e=>{const f=e.target.dataset.f,it=e.target.closest('.item');if(eF&&f&&it)dF[+it.dataset.i][f]=e.target.value});
 flBox.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;const it=e.target.closest('.item'),i=it?+it.dataset.i:-1;
@@ -1550,7 +1677,7 @@ if(yakuBox){
   if(a==='yakucopy'){const out=document.getElementById('yaku-out'),st=document.getElementById('yaku-st');if(!out||!out.value)return;try{await navigator.clipboard.writeText(out.value);if(st)st.textContent='已複製'}catch(err){out.select();if(st)st.textContent='請手動複製'}}
  });
 }
-const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-yaku','日本語ほんやく'],['s-acct','記帳']];
+const SECS=[['home','首頁'],['s-flights','航班'],['s-stay','宿泊情報'],['s-transit','交通明細'],['s-days','每日行程'],['s-wish','旅行の予定'],['s-shop','購物清單'],['s-pack','行李收納清單'],['s-cur','幣值換算'],['s-ootd','每日穿搭 OOTD'],['s-jnl','旅途手記'],['s-yaku','日本語ほんやく'],['s-acct','記帳']];
 const CLICK_SFX=[
  {id:'koron',name:'ころん',tip:'點擊分頁'},
  {id:'kira',name:'きらきら',tip:'進入編輯'},
