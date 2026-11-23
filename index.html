@@ -80,6 +80,15 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .wish{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .wish h4{margin:0 0 8px;color:var(--acc);letter-spacing:.15em}
 #tr-tabs{margin:0 0 10px}
+#s-transit .tr-toggle{cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+#s-transit .tr-toggle .tr-lab{flex:0 0 auto}
+#s-transit .tr-toggle .tr-hint{flex:0 1 auto;min-width:0;font-size:12px;font-weight:400;letter-spacing:.08em;color:var(--mute);margin-left:2px}
+#s-transit .tr-toggle .tr-chev{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-left:4px;border-radius:8px;border:1px solid var(--line);color:var(--acc);font-size:12px;line-height:1;transition:transform .2s ease,background .2s ease}
+#s-transit .tr-toggle:hover .tr-chev{background:rgba(120,150,180,.12)}
+#s-transit.tr-collapsed .tr-chev{transform:rotate(-90deg)}
+#s-transit.tr-collapsed .tr-body{display:none}
+#s-transit:not(.tr-home) .tr-hint,#s-transit:not(.tr-home) .tr-chev{display:none}
+#s-transit:not(.tr-home) .tr-toggle{cursor:default}
 #transit .tr-sum{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;margin:0 0 16px;padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card)}
 #transit .tr-sum b{font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:400;color:var(--acc);letter-spacing:.04em}
 #transit .tr-sum span{font-size:13px;color:var(--mute);letter-spacing:.08em}
@@ -398,6 +407,8 @@ h2{font-size:15px;letter-spacing:.14em;margin:28px 0 10px;gap:8px}
 .ti{width:72px;height:54px;border-radius:8px}
 .wish{gap:8px;grid-template-columns:1fr}
 .wish h4{margin:0 0 6px;font-size:13px;letter-spacing:.1em}
+#s-transit .tr-toggle .tr-hint{font-size:11px;letter-spacing:.04em}
+#s-transit .tr-toggle .tr-chev{width:20px;height:20px;font-size:11px;border-radius:7px}
 #transit .tr-sum{padding:10px 12px;margin:0 0 10px;border-radius:10px;gap:8px 14px}
 #transit .tr-sum b{font-size:22px}
 #transit .tr-sum span{font-size:12px}
@@ -496,9 +507,12 @@ label{font-size:11px;margin-bottom:6px}
 
 </section>
 <section class="sec" id="s-stay"><h2>宿泊情報</h2><div id="stay"></div></section>
-<section class="sec" id="s-transit"><h2>交通明細</h2>
+<section class="sec" id="s-transit">
+<h2 class="tr-toggle" id="tr-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="tr-body"><span class="tr-lab">交通明細</span><span class="tr-hint" id="tr-hint"></span><span class="tr-chev" aria-hidden="true">▾</span></h2>
+<div class="tr-body" id="tr-body">
 <div class="tabs" id="tr-tabs" role="tablist"></div>
 <div id="transit"></div>
+</div>
 </section>
 <section class="sec" id="s-days"><h2>每日行程</h2>
 <div class="tabs" id="tabs" role="tablist"></div>
@@ -969,7 +983,23 @@ const TRANSIT=[
  {from:'京成成田',to:'機場第2航廈',mode:'私鐵',yen:272}
 ]}];
 function dayYen(legs){return (legs||[]).reduce((s,x)=>s+(+x.yen||0),0)}
-let trTab='all';
+let trTab='all',trHomeOpen=false;
+function syncTransitFold(){
+ const sec=document.getElementById('s-transit'),tog=document.getElementById('tr-toggle'),hint=document.getElementById('tr-hint');
+ if(!sec)return;
+ const onHome=typeof curSec!=='undefined'&&curSec==='home';
+ const open=!onHome||trHomeOpen;
+ sec.classList.toggle('tr-home',onHome);
+ sec.classList.toggle('tr-collapsed',onHome&&!trHomeOpen);
+ if(tog){tog.setAttribute('aria-expanded',open?'true':'false');tog.tabIndex=onHome?0:-1}
+ if(hint){
+  if(!onHome){hint.textContent=''}
+  else{
+   const total=TRANSIT.reduce((s,d)=>s+dayYen(d.legs),0);
+   hint.textContent=trHomeOpen?'點一下收合':`合計 ¥${nf(total,0)} · 點一下展開`;
+  }
+ }
+}
 function renderTransit(){
  const box=document.getElementById('transit'),tabs=document.getElementById('tr-tabs');if(!box)return;
  const total=TRANSIT.reduce((s,d)=>s+dayYen(d.legs),0);
@@ -989,11 +1019,18 @@ function renderTransit(){
   return`<article class="tr-day" data-d="${esc(d.d)}"><div class="tr-hd"><div><span class="dd">${esc(d.d)}</span><span class="dw">（${esc(toJpW(d.w))}）</span></div><div class="sum">¥${nf(sum,0)}</div></div><ul class="tr-legs">${legs}</ul></article>`;
  }).join('');
  box.innerHTML=`<div class="tr-sum"><b>¥${nf(total,0)}</b><span>地面交通合計 · ${daysN} 天有紀錄</span></div><div class="tr-days">${html||'<div class="tr-empty">尚無資料</div>'}</div>`;
+ syncTransitFold();
 }
 document.getElementById('tr-tabs')?.addEventListener('click',e=>{
  const b=e.target.closest('[data-tr]');if(!b)return;
  trTab=b.dataset.tr||'all';renderTransit();
 });
+(()=>{
+ const tog=document.getElementById('tr-toggle');if(!tog)return;
+ const flip=()=>{if(typeof curSec==='undefined'||curSec!=='home')return;trHomeOpen=!trHomeOpen;syncTransitFold();try{if(typeof playClickSfx==='function')playClickSfx('fuwa')}catch(e){}};
+ tog.addEventListener('click',flip);
+ tog.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}});
+})();
 const mealLabel=m=>({yes:'有提供',no:'不提供',unk:'未確認'}[m]||'');
 const WJP={'日':'日','一':'月','二':'火','三':'水','四':'木','五':'金','六':'土','月':'月','火':'火','水':'水','木':'木','金':'金','土':'土'};
 const toJpW=w=>WJP[String(w||'').trim()]||w;
@@ -1745,6 +1782,7 @@ function openSec(id,jump,quiet){
  try{sessionStorage.setItem('fuyu-sec',id)}catch(e){}
  try{const h=id==='home'?'':('#'+id);if(location.hash!==h)history.replaceState(null,'',h||(location.pathname+location.search))}catch(e){}
  try{if(typeof STAY!=='undefined'&&STAY.render)STAY.render()}catch(e){}
+ try{if(typeof syncTransitFold==='function')syncTransitFold()}catch(e){}
  if(jump){if(changed&&!quiet)playClickSfx('koron');try{document.querySelector('main').scrollIntoView()}catch(e){}}
 }
 function tgl(o){dr.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
